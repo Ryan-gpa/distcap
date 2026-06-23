@@ -252,18 +252,23 @@ app.post('/api/ai/cover-image', async (req, res) => {
       }
     );
     const rawText = await apiRes.text();
-    console.log('Gemini response (status ' + apiRes.status + '):', rawText.slice(0, 500));
-    const data = JSON.parse(rawText);
+    console.log('Gemini status:', apiRes.status, '| body:', rawText.slice(0, 800));
+
+    let data;
+    try { data = JSON.parse(rawText); } catch (e) {
+      return res.status(500).json({ error: 'Gemini returned non-JSON', details: rawText.slice(0, 400) });
+    }
+
     if (!apiRes.ok) {
       return res.status(500).json({ error: 'Gemini API error', details: data?.error?.message || rawText.slice(0, 300) });
     }
     const generated = data.generatedImages?.[0];
     if (!generated?.image?.imageBytes) {
-      return res.status(500).json({ error: 'No image returned from Gemini.', details: JSON.stringify(data).slice(0, 300) });
+      return res.status(500).json({ error: 'No image in response', details: JSON.stringify(data).slice(0, 400) });
     }
     res.json({ imageBase64: generated.image.imageBytes, mimeType: 'image/png' });
   } catch (err) {
-    console.error('Cover gen error:', err);
+    console.error('Cover gen fetch error:', err.message);
     res.status(500).json({ error: 'Cover generation failed.', details: err.message });
   }
 });
