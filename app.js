@@ -698,4 +698,50 @@ document.addEventListener("DOMContentLoaded", () => {
   renderDeliverables();
   renderObligations();
   initAIAssist();
+
+  // --- AI Cover Image (Gemini Imagen 3) ---
+  const generateCoverBtn = document.getElementById("generateCoverBtn");
+  const coverStatusEl = document.getElementById("ai-status-cover");
+  if (generateCoverBtn) {
+    generateCoverBtn.addEventListener("click", async () => {
+      generateCoverBtn.disabled = true;
+      if (coverStatusEl) coverStatusEl.textContent = "🎨 Generating...";
+
+      try {
+        const res = await fetch("/api/ai/cover-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clientName: document.getElementById("CLIENT_NAME")?.value || document.getElementById("CLIENT_SHORT_NAME")?.value || "",
+            address: [document.getElementById("ADDRESS_1")?.value, document.getElementById("ADDRESS_2")?.value].filter(Boolean).join(", "),
+            engagementType: document.getElementById("ENGAGEMENT_TYPE")?.value || ""
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Generation failed");
+
+        // Convert base64 to Blob and wire into existing cover flow
+        const byteChars = atob(data.imageBase64);
+        const byteNums = new Uint8Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+        const blob = new Blob([byteNums], { type: data.mimeType });
+
+        selectedCoverFile = blob;
+        const usePcycInput = document.getElementById("use_pcyc_cover");
+        if (usePcycInput) usePcycInput.value = "false";
+
+        coverPreview.src = `data:${data.mimeType};base64,${data.imageBase64}`;
+        coverPreviewContainer.classList.remove("hidden");
+        dropzoneText.classList.add("hidden");
+
+        if (coverStatusEl) coverStatusEl.textContent = "✅ Cover generated";
+        setTimeout(() => { if (coverStatusEl) coverStatusEl.textContent = ""; }, 5000);
+      } catch (err) {
+        if (coverStatusEl) coverStatusEl.textContent = `❌ ${err.message}`;
+      } finally {
+        generateCoverBtn.disabled = false;
+      }
+    });
+  }
 });

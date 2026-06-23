@@ -222,6 +222,46 @@ app.post('/api/ai/suggest', async (req, res) => {
   }
 });
 
+// ── AI Cover Image (Gemini Imagen 3) ─────────────────────────────────────────
+app.post('/api/ai/cover-image', async (req, res) => {
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(503).json({ error: 'GEMINI_API_KEY not configured. Add it in Vercel → Project Settings → Environment Variables.' });
+  }
+  const { clientName, address, engagementType } = req.body;
+
+  const isProperty = /property|real estate|land|development|asset/i.test(engagementType || '');
+  const prompt = isProperty
+    ? `Professional aerial architectural photograph for an Australian corporate advisory proposal cover page. Modern commercial property or urban development precinct, Australian cityscape, clean neutral tones, no people, no text, no logos, landscape orientation, photorealistic high quality. Client context: ${clientName || 'Australian corporate client'}${address ? `, ${address}` : ''}.`
+    : `Professional corporate photography for an Australian advisory firm proposal cover page. Modern Australian CBD architecture, glass towers, clean sophisticated aesthetic, neutral tones, no people, no text, no logos, landscape orientation, photorealistic high quality. Engagement context: ${engagementType || 'corporate advisory'} for ${clientName || 'Australian client'}.`;
+
+  try {
+    const apiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instances: [{ prompt }],
+          parameters: { sampleCount: 1, aspectRatio: '16:9' }
+        })
+      }
+    );
+    const data = await apiRes.json();
+    if (!apiRes.ok) {
+      console.error('Gemini Imagen error:', JSON.stringify(data));
+      return res.status(500).json({ error: 'Gemini API error', details: data?.error?.message || 'Unknown error' });
+    }
+    const prediction = data.predictions?.[0];
+    if (!prediction?.bytesBase64Encoded) {
+      return res.status(500).json({ error: 'No image returned from Gemini.' });
+    }
+    res.json({ imageBase64: prediction.bytesBase64Encoded, mimeType: prediction.mimeType || 'image/png' });
+  } catch (err) {
+    console.error('Cover gen error:', err);
+    res.status(500).json({ error: 'Cover generation failed.', details: err.message });
+  }
+});
+
 // Start Server (local only — Vercel imports this as a module)
 if (require.main === module) {
   app.listen(port, () => {
