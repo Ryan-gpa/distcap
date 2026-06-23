@@ -9,8 +9,8 @@ const Anthropic = require('@anthropic-ai/sdk');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Set up JSON body parser
-app.use(express.json());
+// Set up JSON body parser (50mb to handle briefText payloads)
+app.use(express.json({ limit: '50mb' }));
 
 // Set up static files serving (index.html, style.css, app.js, logo, etc.)
 app.use(express.static(path.join(__dirname)));
@@ -187,7 +187,10 @@ app.post('/api/ai/suggest', async (req, res) => {
     return res.status(503).json({ error: 'ANTHROPIC_API_KEY not configured. Add it in Vercel → Project Settings → Environment Variables, then redeploy.' });
   }
   const cfg = AI_SECTIONS[section];
-  if (!cfg) return res.status(400).json({ error: `Unknown section: ${section}` });
+  if (!cfg) {
+    console.error('AI suggest 400 — section:', JSON.stringify(section), '| body keys:', Object.keys(req.body || {}));
+    return res.status(400).json({ error: `Unknown section: ${section}` });
+  }
 
   try {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -238,21 +241,18 @@ app.post('/api/ai/cover-image', async (req, res) => {
 
   try {
     const apiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt,
-          number_of_images: 1,
-          aspect_ratio: '16:9',
-          safety_filter_level: 'block_some',
-          person_generation: 'dont_allow'
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ['IMAGE', 'TEXT'] }
         })
       }
     );
     const rawText = await apiRes.text();
-    console.log('Gemini status:', apiRes.status, '| body:', rawText.slice(0, 800));
+    console.log('Gemini status:', apiRes.status, '| body:', rawText.slice(0, 600));
 
     let data;
     try { data = JSON.parse(rawText); } catch (e) {
@@ -262,11 +262,14 @@ app.post('/api/ai/cover-image', async (req, res) => {
     if (!apiRes.ok) {
       return res.status(500).json({ error: 'Gemini API error', details: data?.error?.message || rawText.slice(0, 300) });
     }
-    const generated = data.generatedImages?.[0];
-    if (!generated?.image?.imageBytes) {
+
+    // Find the image part in the response
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const imgPart = parts.find(p => p.inlineData?.data);
+    if (!imgPart) {
       return res.status(500).json({ error: 'No image in response', details: JSON.stringify(data).slice(0, 400) });
     }
-    res.json({ imageBase64: generated.image.imageBytes, mimeType: 'image/png' });
+    res.json({ imageBase64: imgPart.inlineData.data, mimeType: imgPart.inlineData.mimeType || 'image/png' });
   } catch (err) {
     console.error('Cover gen fetch error:', err.message);
     res.status(500).json({ error: 'Cover generation failed.', details: err.message });
