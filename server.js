@@ -238,29 +238,30 @@ app.post('/api/ai/cover-image', async (req, res) => {
 
   try {
     const apiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+          prompt,
+          number_of_images: 1,
+          aspect_ratio: '16:9',
+          safety_filter_level: 'block_some',
+          person_generation: 'dont_allow'
         })
       }
     );
     const rawText = await apiRes.text();
-    console.error('Gemini raw response (status ' + apiRes.status + '):', rawText.slice(0, 1000));
+    console.log('Gemini response (status ' + apiRes.status + '):', rawText.slice(0, 500));
     const data = JSON.parse(rawText);
     if (!apiRes.ok) {
       return res.status(500).json({ error: 'Gemini API error', details: data?.error?.message || rawText.slice(0, 300) });
     }
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    const imagePart = parts.find(p => p.inlineData?.data);
-    if (!imagePart) {
-      console.error('Gemini no image part, full response:', JSON.stringify(data).slice(0, 500));
+    const generated = data.generatedImages?.[0];
+    if (!generated?.image?.imageBytes) {
       return res.status(500).json({ error: 'No image returned from Gemini.', details: JSON.stringify(data).slice(0, 300) });
     }
-    res.json({ imageBase64: imagePart.inlineData.data, mimeType: imagePart.inlineData.mimeType || 'image/png' });
+    res.json({ imageBase64: generated.image.imageBytes, mimeType: 'image/png' });
   } catch (err) {
     console.error('Cover gen error:', err);
     res.status(500).json({ error: 'Cover generation failed.', details: err.message });
