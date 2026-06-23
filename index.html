@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Distillery Capital — Proposal Generator</title>
+  <!-- Google Fonts: Outfit (headings) & Inter (body/forms) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="glass-bg"></div>
+  
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-block">
+        <img src="logo_crop.png" alt="Distillery Capital Logo" class="brand-logo">
+        <div class="brand-text">
+          <h1>Distillery Capital</h1>
+          <p>PROPOSAL TEMPLATE SYSTEM &bull; PHASE 2</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="loadDemoBtn" class="btn btn-secondary">Load PCYC NSW Demo</button>
+        <button type="button" id="clearFormBtn" class="btn btn-danger">Clear Form</button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="app-workspace">
+      <!-- Left Sidebar Navigation -->
+      <aside class="sidebar-wizard">
+        <ul class="wizard-steps">
+          <li class="step-item active" data-tab="client">
+            <span class="step-num">A</span>
+            <span class="step-title">Client & Contact</span>
+          </li>
+          <li class="step-item" data-tab="engagement">
+            <span class="step-num">B</span>
+            <span class="step-title">Engagement Framing</span>
+          </li>
+          <li class="step-item" data-tab="meeting">
+            <span class="step-num">C</span>
+            <span class="step-title">Origin Meeting</span>
+          </li>
+          <li class="step-item" data-tab="scope">
+            <span class="step-num">D</span>
+            <span class="step-title">Scope of Services</span>
+          </li>
+          <li class="step-item" data-tab="team">
+            <span class="step-num">E</span>
+            <span class="step-title">Timeframes & Team</span>
+          </li>
+          <li class="step-item" data-tab="commercial">
+            <span class="step-num">F</span>
+            <span class="step-title">Commercial Proposal</span>
+          </li>
+          <li class="step-item" data-tab="assets">
+            <span class="step-num">G</span>
+            <span class="step-title">Cover & Assets</span>
+          </li>
+          <li class="step-item" data-tab="drafts">
+            <span class="step-num">H</span>
+            <span class="step-title">Saved Drafts</span>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Right Form Panel -->
+      <section class="form-container">
+        <form id="proposalForm" autocomplete="off" enctype="multipart/form-data">
+          <input type="hidden" id="use_pcyc_cover" name="use_pcyc_cover" value="false">
+          
+          <!-- Tab A: Client & Contact -->
+          <div class="form-tab active" id="tab-client">
+            <h2>Client & Contact</h2>
+            <p class="tab-subtitle">Enter details about the client legal entity and primary contact person.</p>
+            <div class="form-grid">
+              <div class="form-group col-2">
+                <label for="CLIENT_LEGAL_ENTITY">Client Legal Entity Name</label>
+                <input type="text" id="CLIENT_LEGAL_ENTITY" name="CLIENT_LEGAL_ENTITY" placeholder="e.g. Vicinity Centres RE Ltd (ACN 084 098 576)" required>
+              </div>
+              <div class="form-group">
+                <label for="CLIENT_NAME">Client Display Name</label>
+                <input type="text" id="CLIENT_NAME" name="CLIENT_NAME" placeholder="e.g. Vicinity Centres" required>
+              </div>
+              <div class="form-group">
+                <label for="CLIENT_SHORT_NAME">Client Defined Abbreviation</label>
+                <input type="text" id="CLIENT_SHORT_NAME" name="CLIENT_SHORT_NAME" placeholder="e.g. Vicinity" required>
+              </div>
+              <div class="form-group">
+                <label for="CONTACT_NAME">Primary Contact: Full Name</label>
+                <input type="text" id="CONTACT_NAME" name="CONTACT_NAME" placeholder="e.g. James Richardson" required>
+              </div>
+              <div class="form-group">
+                <label for="CONTACT_FIRST_NAME">First Name (for Salutation)</label>
+                <input type="text" id="CONTACT_FIRST_NAME" name="CONTACT_FIRST_NAME" placeholder="e.g. James" required>
+              </div>
+              <div class="form-group">
+                <label for="CONTACT_TITLE">Contact Title/Role</label>
+                <input type="text" id="CONTACT_TITLE" name="CONTACT_TITLE" placeholder="e.g. Head of Transactions" required>
+              </div>
+              <div class="form-group">
+                <label for="CONTACT_EMAIL">Contact Email Address</label>
+                <input type="email" id="CONTACT_EMAIL" name="CONTACT_EMAIL" placeholder="e.g. j.richardson@vicinity.com.au" required>
+              </div>
+              <div class="form-group">
+                <label for="ADDRESS_1">Address Line 1</label>
+                <input type="text" id="ADDRESS_1" name="ADDRESS_1" placeholder="e.g. Level 4, Chadstone Place" required>
+              </div>
+              <div class="form-group">
+                <label for="ADDRESS_2">Address Line 2</label>
+                <input type="text" id="ADDRESS_2" name="ADDRESS_2" placeholder="e.g. 1341 Dandenong Road, Chadstone VIC 3148" required>
+              </div>
+              <div class="form-group col-2">
+                <label for="DECISION_MAKER">Advice Addressed To (Decision Maker)</label>
+                <input type="text" id="DECISION_MAKER" name="DECISION_MAKER" placeholder="e.g. the Vicinity Board (leave blank to default to contact's title)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab B: Engagement Framing -->
+          <div class="form-tab" id="tab-engagement">
+            <h2>Engagement Framing</h2>
+            <p class="tab-subtitle">Define the scope category, transaction descriptors, and document release flags.</p>
+            <div class="form-grid">
+              <div class="form-group col-2">
+                <label for="PROJECT_NAME">Project / Transaction Name (Cover Title)</label>
+                <input type="text" id="PROJECT_NAME" name="PROJECT_NAME" placeholder="e.g. DFO South Wharf Disposal" required>
+              </div>
+              <div class="form-group col-2">
+                <label for="PROJECT_DESCRIPTION">One-Sentence Transaction Description</label>
+                <input type="text" id="PROJECT_DESCRIPTION" name="PROJECT_DESCRIPTION" placeholder="e.g. proposed disposal of the DFO South Wharf retail centre, Melbourne" required>
+              </div>
+              <div class="form-group">
+                <label for="ENGAGEMENT_TYPE">Engagement Type (Re: Line)</label>
+                <input type="text" id="ENGAGEMENT_TYPE" name="ENGAGEMENT_TYPE" value="Transaction Advisory" placeholder="e.g. Transaction Advisory" required>
+              </div>
+              <div class="form-group">
+                <label for="SERVICE_DESCRIPTOR">Service Descriptor (Cover Subtitle)</label>
+                <input type="text" id="SERVICE_DESCRIPTOR" name="SERVICE_DESCRIPTOR" value="transaction advisory" placeholder="e.g. transaction advisory" required>
+              </div>
+              <div class="form-group">
+                <label for="ADVISOR_ROLE">DistCap Role Title</label>
+                <input type="text" id="ADVISOR_ROLE" name="ADVISOR_ROLE" value="real estate" placeholder="e.g. real estate" required>
+              </div>
+              <div class="form-group">
+                <label for="DATE_ISSUE">Proposal Issue Date</label>
+                <input type="text" id="DATE_ISSUE" name="DATE_ISSUE" placeholder="e.g. 12 June 2026" required>
+              </div>
+              <div class="form-group">
+                <label for="YEAR">Copyright Year</label>
+                <input type="text" id="YEAR" name="YEAR" value="2026" placeholder="e.g. 2026" required>
+              </div>
+              <div class="form-group">
+                <label for="draft_status">Draft Status (Removes green DRAFT text if 'Final')</label>
+                <select id="draft_status" name="draft_status">
+                  <option value="draft" selected>Draft (Highlighted placeholders + DRAFT stamps)</option>
+                  <option value="final">Final (Clean document for client issue)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="highlight_filled">Highlight Filled Fields (For Testing)</label>
+                <select id="highlight_filled" name="highlight_filled">
+                  <option value="false" selected>No (Standard text runs)</option>
+                  <option value="true">Yes (Highlight filled fields in Green)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab C: Origin Meeting -->
+          <div class="form-tab" id="tab-meeting">
+            <h2>Origin Meeting (Section 1)</h2>
+            <p class="tab-subtitle">Establish context for the engagement by referencing the initial discovery conversation.</p>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="MEETING_CONTACT">Client Participant(s)</label>
+                <input type="text" id="MEETING_CONTACT" name="MEETING_CONTACT" placeholder="e.g. James Richardson" required>
+              </div>
+              <div class="form-group">
+                <label for="MEETING_LEAD">DistCap Lead Participant</label>
+                <input type="text" id="MEETING_LEAD" name="MEETING_LEAD" value="Phillip Ransom" placeholder="e.g. Phillip Ransom" required>
+              </div>
+              <div class="form-group">
+                <label for="MEETING_LOCATION">Meeting Location</label>
+                <input type="text" id="MEETING_LOCATION" name="MEETING_LOCATION" placeholder="e.g. 39 Martin Place, Sydney" required>
+              </div>
+              <div class="form-group">
+                <label for="MEETING_DATE">Meeting Date</label>
+                <input type="text" id="MEETING_DATE" name="MEETING_DATE" placeholder="e.g. Wednesday, 4 June 2026" required>
+              </div>
+              <div class="form-group col-2">
+                <label for="REQUIREMENT_SUMMARY">One-Sentence Summary of Client's Request</label>
+                <input type="text" id="REQUIREMENT_SUMMARY" name="REQUIREMENT_SUMMARY" placeholder="e.g. provide independent real estate transaction advisory services in connection with the proposed disposal of DFO South Wharf" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab D: Scope of Services -->
+          <div class="form-tab" id="tab-scope">
+            <h2>Scope of Services (Section 2)</h2>
+            <p class="tab-subtitle">Specify project deliverables and client responsibilities. Be clear and deterministic.</p>
+            
+            <div class="form-group">
+              <label>DistCap Deliverables / Activities (Listed between initial and final static bullets)</label>
+              <div id="deliverablesContainer" class="dynamic-list">
+                <!-- Dynamic inputs will be inserted here -->
+              </div>
+              <button type="button" id="addDeliverableBtn" class="btn btn-secondary btn-sm">+ Add Deliverable</button>
+            </div>
+
+            <hr class="tab-divider">
+
+            <div class="form-group">
+              <label>Extra Client Obligations (Optional)</label>
+              <div id="obligationsContainer" class="dynamic-list">
+                <!-- Dynamic inputs will be inserted here -->
+              </div>
+              <button type="button" id="addObligationBtn" class="btn btn-secondary btn-sm">+ Add Obligation</button>
+            </div>
+          </div>
+
+          <!-- Tab E: Timeframes & Team -->
+          <div class="form-tab" id="tab-team">
+            <h2>Timeframes & Team (Sections 3–4)</h2>
+            <p class="tab-subtitle">Outline resource availability, weekly hourly commitment profiles, and personnel.</p>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="AVAILABILITY_WINDOW">Availability Window</label>
+                <input type="text" id="AVAILABILITY_WINDOW" name="AVAILABILITY_WINDOW" value="two to three months" placeholder="e.g. two to three months" required>
+              </div>
+              <div class="form-group">
+                <label for="INITIAL_TERM">Initial Engagement Term</label>
+                <input type="text" id="INITIAL_TERM" name="INITIAL_TERM" value="one (1) month" placeholder="e.g. one (1) month" required>
+              </div>
+              <div class="form-group">
+                <label for="DAYS_PER_WEEK_INITIAL">Initial Resource Days/Week (X)</label>
+                <input type="text" id="DAYS_PER_WEEK_INITIAL" name="DAYS_PER_WEEK_INITIAL" placeholder="e.g. 3" required>
+              </div>
+              <div class="form-group">
+                <label for="COMMITMENT_PERIOD">Initial Commitment Period</label>
+                <input type="text" id="COMMITMENT_PERIOD" name="COMMITMENT_PERIOD" placeholder="e.g. the first four weeks" required>
+              </div>
+              <div class="form-group">
+                <label for="DAYS_PER_WEEK_STEPDOWN">Step-down Days/Week (Y)</label>
+                <input type="text" id="DAYS_PER_WEEK_STEPDOWN" name="DAYS_PER_WEEK_STEPDOWN" placeholder="e.g. 1.5" required>
+              </div>
+              <div class="form-group">
+                <label for="TEAM_MEMBERS">Supporting Team Members & Roles</label>
+                <input type="text" id="TEAM_MEMBERS" name="TEAM_MEMBERS" placeholder="e.g. Phillip Ransom, supported, where required, by Development Advisors" required>
+              </div>
+              <div class="form-group col-2">
+                <label for="CV_PAGES">Appendix 1 CV Label Description</label>
+                <input type="text" id="CV_PAGES" name="CV_PAGES" placeholder="e.g. Phillip Ransom (Managing Director)" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab F: Commercial Proposal -->
+          <div class="form-tab" id="tab-commercial">
+            <h2>Commercial Proposal (Section 5)</h2>
+            <p class="tab-subtitle">Configure pricing mechanisms, hourly rates, billing milestones, and terms.</p>
+            
+            <div class="form-group">
+              <label for="fee_basis">Fee Basis Model</label>
+              <div class="segmented-control">
+                <label class="control-label">
+                  <input type="radio" name="fee_basis" value="time_and_materials" checked>
+                  <span class="control-text">Time and Materials (Hourly)</span>
+                </label>
+                <label class="control-label">
+                  <input type="radio" name="fee_basis" value="fixed">
+                  <span class="control-text">Fixed Fee</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="fee-conditional-section" id="section-tm">
+              <h3>Time & Materials Configuration</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="FEE_MONTHLY_ESTIMATE">Indicative Monthly Estimate (Optional)</label>
+                  <input type="text" id="FEE_MONTHLY_ESTIMATE" name="FEE_MONTHLY_ESTIMATE" placeholder="e.g. 35,000 (leave blank if no estimate)">
+                </div>
+                <div class="form-group">
+                  <label for="RATE_MD">Managing Director Hourly Rate</label>
+                  <input type="text" id="RATE_MD" name="RATE_MD" value="$550/hr" required>
+                </div>
+                <div class="form-group">
+                  <label for="RATE_ADVISOR">Advisors Hourly Rate</label>
+                  <input type="text" id="RATE_ADVISOR" name="RATE_ADVISOR" value="$350/hr" required>
+                </div>
+                <div class="form-group">
+                  <label for="RATE_ANALYST">Analyst Hourly Rate</label>
+                  <input type="text" id="RATE_ANALYST" name="RATE_ANALYST" value="$100/hr" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="fee-conditional-section hidden" id="section-fixed">
+              <h3>Fixed Fee Configuration</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="FIXED_FEE_AMOUNT">Fixed Fee Total Amount</label>
+                  <input type="text" id="FIXED_FEE_AMOUNT" name="FIXED_FEE_AMOUNT" placeholder="e.g. $40,000">
+                </div>
+                <div class="form-group col-2">
+                  <label for="FIXED_FEE_MILESTONES">Payment Milestones / Split</label>
+                  <input type="text" id="FIXED_FEE_MILESTONES" name="FIXED_FEE_MILESTONES" placeholder="e.g. 50% upon signing, 50% upon final report delivery">
+                </div>
+              </div>
+            </div>
+
+            <hr class="tab-divider">
+
+            <div class="form-grid">
+              <div class="form-group col-2">
+                <label for="INVOICING_BASIS">Invoicing Basis Phrase</label>
+                <input type="text" id="INVOICING_BASIS" name="INVOICING_BASIS" value="monthly in arrears" placeholder="e.g. monthly in arrears" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab G: Cover & Assets -->
+          <div class="form-tab" id="tab-assets">
+            <h2>Cover & Assets</h2>
+            <p class="tab-subtitle">Optionally upload a custom image for the proposal cover sheet.</p>
+            
+            <div class="form-group">
+              <label>Custom Cover Image</label>
+              <div class="upload-dropzone" id="coverDropzone">
+                <input type="file" id="cover_image" name="cover_image" accept="image/png, image/jpeg" class="file-input">
+                <div class="dropzone-text">
+                  <span class="upload-icon">&#128247;</span>
+                  <p>Drag & drop cover image here, or <span>browse files</span></p>
+                  <p class="file-limits">Accepts PNG or JPEG. Recommended size: 640&times;429 pixels.</p>
+                </div>
+                <div class="preview-container hidden" id="coverPreviewContainer">
+                  <img id="coverPreview" src="" alt="Cover Image Preview">
+                  <button type="button" id="removeCoverBtn" class="btn btn-danger btn-sm">Remove Image</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab H: Saved Drafts -->
+          <div class="form-tab" id="tab-drafts">
+            <h2>Saved Workspace Drafts</h2>
+            <p class="tab-subtitle">Save progress or reload previous questionnaire answer sheets from project files.</p>
+            
+            <div class="draft-save-bar">
+              <input type="text" id="draftNameInput" placeholder="Enter draft name (e.g. Vicinity_DFO)">
+              <button type="button" id="saveDraftBtn" class="btn btn-primary">Save Current as Draft</button>
+            </div>
+
+            <h3 class="draft-list-title">Available Drafts</h3>
+            <div id="draftsListContainer" class="drafts-list">
+              <p class="no-drafts">No drafts saved in workspace yet.</p>
+            </div>
+          </div>
+
+        </form>
+      </section>
+    </main>
+
+    <!-- Footer Action Bar -->
+    <footer class="app-actions">
+      <div class="action-left">
+        <button type="button" id="prevBtn" class="btn btn-secondary" disabled>Back</button>
+        <button type="button" id="nextBtn" class="btn btn-primary">Next Step</button>
+      </div>
+      <div class="action-right">
+        <button type="button" id="generateTemplateBtn" class="btn btn-outline">Generate Highlighted Template</button>
+        <button type="button" id="generateBtn" class="btn btn-accent">Generate Proposal</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Validation Error Overlay -->
+  <div class="modal-overlay hidden" id="errorModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-icon">&#9888;</span>
+        <h2>Validation Gate Failed</h2>
+      </div>
+      <div class="modal-body">
+        <p>The document generation completed, but failed the strict completeness validation check. The following issues must be resolved:</p>
+        <ul id="errorList" class="error-list">
+          <!-- Errors injected here -->
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="closeErrorBtn" class="btn btn-primary">Back to Form</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Animation Overlay -->
+  <div class="modal-overlay hidden" id="loadingModal">
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <h2>Generating Proposal</h2>
+      <p>Building document structure, applying styles, and running validation gate...</p>
+    </div>
+  </div>
+
+  <!-- Success Overlay -->
+  <div class="modal-overlay hidden" id="successModal">
+    <div class="modal-card success-card">
+      <div class="modal-header">
+        <span class="modal-icon success-icon">&#10004;</span>
+        <h2>Generation Successful!</h2>
+      </div>
+      <div class="modal-body">
+        <p>Your proposal was compiled, verified by the validation gate, patched for bugs, and downloaded successfully!</p>
+        <p class="output-filename-info">Saved to: <code id="downloadedFilename">proposal.docx</code></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="closeSuccessBtn" class="btn btn-primary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Confirm Overlay -->
+  <div class="modal-overlay hidden" id="confirmModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-icon" style="color: var(--color-gold);">&#9888;</span>
+        <h2>Reset Questionnaire?</h2>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to clear the entire form? This will delete your current progress and reset all fields.</p>
+      </div>
+      <div class="modal-footer" style="gap: 12px;">
+        <button type="button" id="cancelClearBtn" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="confirmClearBtn" class="btn btn-danger" style="background: rgba(244, 63, 94, 0.15);">Yes, Reset Form</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script src="app.js"></script>
+</body>
+</html>

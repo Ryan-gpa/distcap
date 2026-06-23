@@ -1,0 +1,178 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Distillery Capital Proposal Generator API",
+    "description": "API to generate validated, brand-consistent transaction proposal documents (.docx) for Distillery Capital.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/api/generate": {
+      "post": {
+        "summary": "Generate a Proposal Document",
+        "description": "Accepts transaction data and compiles a clean, validated .docx proposal using the Distillery Capital templates.",
+        "operationId": "generateProposal",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalAnswers"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Proposal generated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "downloadUrl": {
+                      "type": "string",
+                      "format": "uri",
+                      "example": "http://localhost:3000/api/download/12345_DistCap_Proposal_Client_Project.docx"
+                    },
+                    "filename": {
+                      "type": "string",
+                      "example": "20260612_DistCap_Proposal_Client_Project.docx"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure or missing payload.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Validation Gate Failed"
+                    },
+                    "details": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": ["Yellow highlight detected on line 14", "Missing client name"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProposalAnswers": {
+        "type": "object",
+        "required": [
+          "CLIENT_NAME",
+          "CLIENT_LEGAL_ENTITY",
+          "CLIENT_SHORT_NAME",
+          "PROJECT_NAME",
+          "PROJECT_DESCRIPTION",
+          "ENGAGEMENT_TYPE",
+          "SERVICE_DESCRIPTOR",
+          "ADVISOR_ROLE",
+          "DATE_ISSUE",
+          "YEAR",
+          "CONTACT_NAME",
+          "CONTACT_FIRST_NAME",
+          "CONTACT_TITLE",
+          "CONTACT_EMAIL",
+          "ADDRESS_1",
+          "ADDRESS_2",
+          "AVAILABILITY_WINDOW",
+          "DAYS_PER_WEEK_INITIAL",
+          "COMMITMENT_PERIOD",
+          "DAYS_PER_WEEK_STEPDOWN",
+          "TEAM_MEMBERS",
+          "RATE_MD",
+          "RATE_ADVISOR",
+          "RATE_ANALYST",
+          "INVOICING_BASIS",
+          "DELIVERABLES"
+        ],
+        "properties": {
+          "CLIENT_NAME": { "type": "string", "example": "Police Citizens Youth Clubs NSW" },
+          "CLIENT_LEGAL_ENTITY": { "type": "string", "example": "Police Citizens Youth Clubs NSW Ltd (ABN 89 401 152 271)" },
+          "CLIENT_SHORT_NAME": { "type": "string", "example": "PCYC NSW" },
+          "PROJECT_NAME": { "type": "string", "example": "Property Portfolio & Capital Strategy" },
+          "PROJECT_DESCRIPTION": { "type": "string", "example": "proposed strategic review and optimization of the PCYC NSW club property portfolio and capital works program" },
+          "ENGAGEMENT_TYPE": { "type": "string", "example": "Strategic Property Advisory" },
+          "SERVICE_DESCRIPTOR": { "type": "string", "example": "strategic property advisory" },
+          "ADVISOR_ROLE": { "type": "string", "example": "strategic property" },
+          "DATE_ISSUE": { "type": "string", "example": "12 June 2026" },
+          "YEAR": { "type": "string", "example": "2026" },
+          "CONTACT_NAME": { "type": "string", "example": "Ben Hobby" },
+          "CONTACT_FIRST_NAME": { "type": "string", "example": "Ben" },
+          "CONTACT_TITLE": { "type": "string", "example": "Chief Executive Officer" },
+          "CONTACT_EMAIL": { "type": "string", "example": "bhobby@pcycnsw.org.au" },
+          "ADDRESS_1": { "type": "string", "example": "Suite 2, 6B Figtree Drive" },
+          "ADDRESS_2": { "type": "string", "example": "Sydney Olympic Park NSW 2127" },
+          "DECISION_MAKER": { "type": "string", "example": "the PCYC Board of Directors" },
+          "INITIAL_TERM": { "type": "string", "example": "two (2) months" },
+          "MEETING_CONTACT": { "type": "string", "example": "Ben Hobby" },
+          "MEETING_LEAD": { "type": "string", "example": "Phillip Ransom" },
+          "MEETING_LOCATION": { "type": "string", "example": "2/6B Figtree Drive, Sydney Olympic Park" },
+          "MEETING_DATE": { "type": "string", "example": "Tuesday, 9 June 2026" },
+          "REQUIREMENT_SUMMARY": { "type": "string", "example": "provide strategic real estate advisory services to assist PCYC NSW in optimizing its club property portfolio and capital redevelopment program" },
+          "DELIVERABLES": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": [
+              "Conduct a comprehensive audit of current club properties and lease structures",
+              "Develop a prioritization framework for capital works and facility redevelopments",
+              "Identify commercial opportunities for co-location and joint ventures",
+              "Prepare a property portfolio optimization report and action plan"
+            ]
+          },
+          "CLIENT_OBLIGATION_OTHER": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": [
+              "Provide access to all club asset registers, lease documents, and recent property valuations",
+              "Facilitate site visits and coordinate interviews with key regional club managers"
+            ]
+          },
+          "AVAILABILITY_WINDOW": { "type": "string", "example": "two to three months" },
+          "DAYS_PER_WEEK_INITIAL": { "type": "string", "example": "2" },
+          "COMMITMENT_PERIOD": { "type": "string", "example": "the first six weeks" },
+          "DAYS_PER_WEEK_STEPDOWN": { "type": "string", "example": "1" },
+          "TEAM_MEMBERS": { "type": "string", "example": "Phillip Ransom, Managing Director and Engagement Lead" },
+          "CV_PAGES": { "type": "string", "example": "Phillip Ransom (Managing Director)" },
+          "fee_basis": { "type": "string", "enum": ["time_and_materials", "fixed"], "example": "time_and_materials" },
+          "FEE_MONTHLY_ESTIMATE": { "type": "string", "example": "28,000" },
+          "RATE_MD": { "type": "string", "example": "$550/hr" },
+          "RATE_ADVISOR": { "type": "string", "example": "$350/hr" },
+          "RATE_ANALYST": { "type": "string", "example": "$100/hr" },
+          "FIXED_FEE_AMOUNT": { "type": "string", "example": "" },
+          "FIXED_FEE_MILESTONES": { "type": "string", "example": "" },
+          "INVOICING_BASIS": { "type": "string", "example": "monthly in arrears" },
+          "draft_status": { "type": "string", "enum": ["draft", "final"], "example": "draft" },
+          "highlight_filled": { "type": "string", "enum": ["true", "false"], "example": "false" },
+          "use_pcyc_cover": { "type": "string", "enum": ["true", "false"], "example": "true" }
+        }
+      }
+    }
+  }
+}

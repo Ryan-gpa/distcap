@@ -1,0 +1,5 @@
+node_modules/
+drafts/
+*.docx
+.env
+.env.local
