@@ -66,6 +66,7 @@ app.post('/api/generate', upload.single('cover_image'), (req, res) => {
     const customCoverBuffer = req.file ? req.file.buffer : null;
     
     // Generate Document
+    console.log('DEBUG isTemplate:', isTemplate, '| DELIVERABLES:', JSON.stringify(answers.DELIVERABLES));
     const doc = buildDocument(answers, { isTemplate, customCoverBuffer });
     
     Packer.toBuffer(doc).then(buf => {
