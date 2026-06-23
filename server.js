@@ -248,15 +248,17 @@ app.post('/api/ai/cover-image', async (req, res) => {
         })
       }
     );
-    const data = await apiRes.json();
+    const rawText = await apiRes.text();
+    console.error('Gemini raw response (status ' + apiRes.status + '):', rawText.slice(0, 1000));
+    const data = JSON.parse(rawText);
     if (!apiRes.ok) {
-      console.error('Gemini cover error:', JSON.stringify(data));
-      return res.status(500).json({ error: 'Gemini API error', details: data?.error?.message || 'Unknown error' });
+      return res.status(500).json({ error: 'Gemini API error', details: data?.error?.message || rawText.slice(0, 300) });
     }
     const parts = data.candidates?.[0]?.content?.parts || [];
     const imagePart = parts.find(p => p.inlineData?.data);
     if (!imagePart) {
-      return res.status(500).json({ error: 'No image returned from Gemini.' });
+      console.error('Gemini no image part, full response:', JSON.stringify(data).slice(0, 500));
+      return res.status(500).json({ error: 'No image returned from Gemini.', details: JSON.stringify(data).slice(0, 300) });
     }
     res.json({ imageBase64: imagePart.inlineData.data, mimeType: imagePart.inlineData.mimeType || 'image/png' });
   } catch (err) {
