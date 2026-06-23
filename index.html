@@ -27,6 +27,11 @@
       <div class="header-actions">
         <button type="button" id="loadDemoBtn" class="btn btn-secondary">Load PCYC NSW Demo</button>
         <button type="button" id="clearFormBtn" class="btn btn-danger">Clear Form</button>
+        <label class="btn btn-secondary brief-upload-btn" id="briefUploadLabel" title="Upload a client brief, email or document to auto-fill form fields">
+          📎 Upload Brief
+          <input type="file" id="briefFileInput" accept=".pdf,.docx,.txt,.eml,.msg,.md" style="display:none">
+        </label>
+        <span id="briefFilenameDisplay" class="brief-filename"></span>
       </div>
     </header>
 
@@ -79,6 +84,12 @@
           <div class="form-tab active" id="tab-client">
             <h2>Client & Contact</h2>
             <p class="tab-subtitle">Enter details about the client legal entity and primary contact person.</p>
+            <div class="ai-bar">
+              <span class="ai-label">✨ AI</span>
+              <button type="button" class="btn-ai btn-ai-brief" data-section="client" disabled>📄 Fill from Brief</button>
+              <button type="button" class="btn-ai btn-ai-research" data-section="client">🔍 Research Online</button>
+              <span class="ai-status" id="ai-status-client"></span>
+            </div>
             <div class="form-grid">
               <div class="form-group col-2">
                 <label for="CLIENT_LEGAL_ENTITY">Client Legal Entity Name</label>
@@ -127,6 +138,12 @@
           <div class="form-tab" id="tab-engagement">
             <h2>Engagement Framing</h2>
             <p class="tab-subtitle">Define the scope category, transaction descriptors, and document release flags.</p>
+            <div class="ai-bar">
+              <span class="ai-label">✨ AI</span>
+              <button type="button" class="btn-ai btn-ai-brief" data-section="engagement" disabled>📄 Fill from Brief</button>
+              <button type="button" class="btn-ai btn-ai-research" data-section="engagement">🔍 Research Online</button>
+              <span class="ai-status" id="ai-status-engagement"></span>
+            </div>
             <div class="form-grid">
               <div class="form-group col-2">
                 <label for="PROJECT_NAME">Project / Transaction Name (Cover Title)</label>
@@ -177,6 +194,12 @@
           <div class="form-tab" id="tab-meeting">
             <h2>Origin Meeting (Section 1)</h2>
             <p class="tab-subtitle">Establish context for the engagement by referencing the initial discovery conversation.</p>
+            <div class="ai-bar">
+              <span class="ai-label">✨ AI</span>
+              <button type="button" class="btn-ai btn-ai-brief" data-section="meeting" disabled>📄 Fill from Brief</button>
+              <button type="button" class="btn-ai btn-ai-research" data-section="meeting">🔍 Research Online</button>
+              <span class="ai-status" id="ai-status-meeting"></span>
+            </div>
             <div class="form-grid">
               <div class="form-group">
                 <label for="MEETING_CONTACT">Client Participant(s)</label>
@@ -205,7 +228,13 @@
           <div class="form-tab" id="tab-scope">
             <h2>Scope of Services (Section 2)</h2>
             <p class="tab-subtitle">Specify project deliverables and client responsibilities. Be clear and deterministic.</p>
-            
+            <div class="ai-bar">
+              <span class="ai-label">✨ AI</span>
+              <button type="button" class="btn-ai btn-ai-brief" data-section="scope" disabled>📄 Fill from Brief</button>
+              <button type="button" class="btn-ai btn-ai-research" data-section="scope">🔍 Research Online</button>
+              <span class="ai-status" id="ai-status-scope"></span>
+            </div>
+
             <div class="form-group">
               <label>DistCap Deliverables / Activities (Listed between initial and final static bullets)</label>
               <div id="deliverablesContainer" class="dynamic-list">
@@ -229,6 +258,12 @@
           <div class="form-tab" id="tab-team">
             <h2>Timeframes & Team (Sections 3–4)</h2>
             <p class="tab-subtitle">Outline resource availability, weekly hourly commitment profiles, and personnel.</p>
+            <div class="ai-bar">
+              <span class="ai-label">✨ AI</span>
+              <button type="button" class="btn-ai btn-ai-brief" data-section="team" disabled>📄 Fill from Brief</button>
+              <button type="button" class="btn-ai btn-ai-research" data-section="team">🔍 Research Online</button>
+              <span class="ai-status" id="ai-status-team"></span>
+            </div>
             <div class="form-grid">
               <div class="form-group">
                 <label for="AVAILABILITY_WINDOW">Availability Window</label>
@@ -265,7 +300,13 @@
           <div class="form-tab" id="tab-commercial">
             <h2>Commercial Proposal (Section 5)</h2>
             <p class="tab-subtitle">Configure pricing mechanisms, hourly rates, billing milestones, and terms.</p>
-            
+            <div class="ai-bar">
+              <span class="ai-label">✨ AI</span>
+              <button type="button" class="btn-ai btn-ai-brief" data-section="commercial" disabled>📄 Fill from Brief</button>
+              <button type="button" class="btn-ai btn-ai-research" data-section="commercial">🔍 Research Online</button>
+              <span class="ai-status" id="ai-status-commercial"></span>
+            </div>
+
             <div class="form-group">
               <label for="fee_basis">Fee Basis Model</label>
               <div class="segmented-control">

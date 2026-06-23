@@ -3,3 +3,5 @@ drafts/
 *.docx
 .env
 .env.local
+
+.vercel

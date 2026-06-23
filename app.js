@@ -6,6 +6,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let deliverables = ["", "", ""]; // 3 initial blank deliverables
   let obligations = [""]; // 1 initial blank obligation
   let selectedCoverFile = null;
+  let briefText = "";
+  let briefFilename = "";
 
   const TABS_ORDER = ["client", "engagement", "meeting", "scope", "team", "commercial", "assets", "drafts"];
 
@@ -571,6 +573,114 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // --- AI Assist ---
+  function applyAISuggestions(suggestions) {
+    let count = 0;
+    Object.entries(suggestions).forEach(([key, val]) => {
+      if (val === null || val === undefined || val === "") return;
+
+      if (key === "DELIVERABLES" && Array.isArray(val) && val.length > 0) {
+        deliverables = val.filter(d => d && d.trim());
+        renderDeliverables();
+        count++;
+        return;
+      }
+      if (key === "CLIENT_OBLIGATION_OTHER" && Array.isArray(val) && val.length > 0) {
+        obligations = val.filter(o => o && o.trim());
+        renderObligations();
+        count++;
+        return;
+      }
+      if (key === "fee_basis") {
+        const radio = document.querySelector(`input[name="fee_basis"][value="${val}"]`);
+        if (radio) { radio.click(); count++; }
+        return;
+      }
+
+      const el = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
+      if (el && el.type !== "radio" && el.type !== "file") {
+        el.value = String(val);
+        count++;
+      }
+    });
+    return count;
+  }
+
+  async function aiSuggest(section, mode) {
+    const statusEl = document.getElementById(`ai-status-${section}`);
+    const allBriefBtns = document.querySelectorAll(`.btn-ai-brief[data-section="${section}"]`);
+    const allResearchBtns = document.querySelectorAll(`.btn-ai-research[data-section="${section}"]`);
+
+    allBriefBtns.forEach(b => b.disabled = true);
+    allResearchBtns.forEach(b => b.disabled = true);
+    if (statusEl) statusEl.textContent = mode === "research" ? "🔍 Researching..." : "⚙️ Reading brief...";
+
+    try {
+      const body = {
+        section,
+        mode,
+        clientName: document.getElementById("CLIENT_NAME")?.value || document.getElementById("CLIENT_SHORT_NAME")?.value || "",
+        engagementType: document.getElementById("ENGAGEMENT_TYPE")?.value || ""
+      };
+      if (mode === "brief") body.briefText = briefText;
+
+      const res = await fetch("/api/ai/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        if (statusEl) statusEl.textContent = `❌ ${data.error || "Failed"}`;
+        return;
+      }
+
+      const count = applyAISuggestions(data.suggestions);
+      if (statusEl) statusEl.textContent = `✅ ${count} field${count !== 1 ? "s" : ""} filled`;
+      setTimeout(() => { if (statusEl) statusEl.textContent = ""; }, 5000);
+    } catch (err) {
+      if (statusEl) statusEl.textContent = `❌ ${err.message}`;
+    } finally {
+      if (briefText) allBriefBtns.forEach(b => b.disabled = false);
+      allResearchBtns.forEach(b => b.disabled = false);
+    }
+  }
+
+  function initAIAssist() {
+    const fileInput = document.getElementById("briefFileInput");
+    const filenameDisplay = document.getElementById("briefFilenameDisplay");
+    if (!fileInput) return;
+
+    fileInput.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (filenameDisplay) { filenameDisplay.textContent = "⏳ Reading..."; filenameDisplay.style.display = "inline"; }
+
+      const form = new FormData();
+      form.append("brief", file);
+      try {
+        const res = await fetch("/api/ai/extract", { method: "POST", body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Extraction failed");
+
+        briefText = data.text;
+        briefFilename = data.filename;
+        if (filenameDisplay) filenameDisplay.textContent = `📄 ${data.filename}`;
+        document.querySelectorAll(".btn-ai-brief").forEach(b => b.disabled = false);
+      } catch (err) {
+        if (filenameDisplay) filenameDisplay.textContent = `❌ ${err.message}`;
+      }
+    });
+
+    document.querySelectorAll(".btn-ai-brief").forEach(btn => {
+      btn.addEventListener("click", () => aiSuggest(btn.dataset.section, "brief"));
+    });
+    document.querySelectorAll(".btn-ai-research").forEach(btn => {
+      btn.addEventListener("click", () => aiSuggest(btn.dataset.section, "research"));
+    });
+  }
+
   // --- Button Listeners ---
   generateBtn.addEventListener("click", () => generateProposal(false));
   generateTemplateBtn.addEventListener("click", () => generateProposal(true));
@@ -587,4 +697,5 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Initialize lists ---
   renderDeliverables();
   renderObligations();
+  initAIAssist();
 });

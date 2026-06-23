@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { Packer } = require('docx');
 const { buildDocument } = require('./build2.js');
+const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -123,6 +124,101 @@ app.post('/api/drafts/:name', (req, res) => {
     res.json({ success: true, name });
   } catch (err) {
     res.status(500).json({ error: 'Failed to save draft.', details: err.message });
+  }
+});
+
+// ── AI Assist ─────────────────────────────────────────────────────────────────
+const AI_SECTIONS = {
+  client: {
+    fields: ['CLIENT_LEGAL_ENTITY','CLIENT_NAME','CLIENT_SHORT_NAME','CONTACT_NAME','CONTACT_FIRST_NAME','CONTACT_TITLE','CONTACT_EMAIL','ADDRESS_1','ADDRESS_2','DECISION_MAKER'],
+    instruction: 'Extract: full legal entity name with ABN if present, trading/short display name, one-word abbreviation, primary contact full name, first name only, their title/role, email, street address line 1, suburb/state/postcode line 2, and the decision-maker name or body (e.g. "the Board of Directors").'
+  },
+  engagement: {
+    fields: ['PROJECT_NAME','PROJECT_DESCRIPTION','ENGAGEMENT_TYPE','SERVICE_DESCRIPTOR','ADVISOR_ROLE','DATE_ISSUE','YEAR'],
+    instruction: 'Extract or infer: a concise project name (e.g. "Property Portfolio & Capital Strategy"), a one-sentence lower-case description of what DistCap is being engaged to do, the engagement type title-cased (e.g. "Strategic Advisory"), the service descriptor lower-cased (e.g. "strategic advisory"), the advisor role lower-cased (e.g. "real estate"), today\'s date formatted as "DD Month YYYY", and the 4-digit year.'
+  },
+  meeting: {
+    fields: ['MEETING_DATE','MEETING_CONTACT','MEETING_LEAD','MEETING_LOCATION','REQUIREMENT_SUMMARY'],
+    instruction: 'Extract: the initial meeting or call date in format "Day, DD Month YYYY", the client attendee name(s), who led from DistCap (default "Phillip Ransom" if unknown), the meeting address, and a one-sentence lower-case summary of what the client is requesting DistCap to do.'
+  },
+  scope: {
+    fields: ['DELIVERABLES','CLIENT_OBLIGATION_OTHER'],
+    instruction: 'DELIVERABLES must be an array of 4-8 specific, verifiable activity strings that DistCap would perform. CLIENT_OBLIGATION_OTHER must be an array of 2-4 strings describing what the client must provide (documents, access, introductions). Both must be arrays, not strings.'
+  },
+  team: {
+    fields: ['AVAILABILITY_WINDOW','INITIAL_TERM','DAYS_PER_WEEK_INITIAL','COMMITMENT_PERIOD','DAYS_PER_WEEK_STEPDOWN','TEAM_MEMBERS','CV_PAGES'],
+    instruction: 'Extract or infer: availability window (e.g. "two to three months"), initial engagement term (e.g. "one (1) month"), initial days per week as a number string, the commitment period description (e.g. "the first six weeks"), step-down days per week as a number string, team member names and roles, and names for CV appendix pages.'
+  },
+  commercial: {
+    fields: ['fee_basis','FEE_MONTHLY_ESTIMATE','RATE_MD','RATE_ADVISOR','RATE_ANALYST','INVOICING_BASIS','FIXED_FEE_AMOUNT','FIXED_FEE_MILESTONES'],
+    instruction: 'Extract fee structure. fee_basis must be exactly "time_and_materials" or "fixed". If not specified, default to "time_and_materials". Use Australian advisory market rates if not stated: RATE_MD "$550/hr", RATE_ADVISOR "$350/hr", RATE_ANALYST "$100/hr". INVOICING_BASIS defaults to "monthly in arrears".'
+  }
+};
+
+// Extract text from uploaded brief file (PDF / DOCX / plain text)
+const briefUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+app.post('/api/ai/extract', briefUpload.single('brief'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file provided.' });
+  const { buffer, originalname } = req.file;
+  try {
+    let text = '';
+    const name = originalname.toLowerCase();
+    if (name.endsWith('.pdf')) {
+      const pdfParse = require('pdf-parse');
+      const data = await pdfParse(buffer);
+      text = data.text;
+    } else if (name.endsWith('.docx')) {
+      const mammoth = require('mammoth');
+      const result = await mammoth.extractRawText({ buffer });
+      text = result.value;
+    } else {
+      text = buffer.toString('utf8');
+    }
+    res.json({ text: text.slice(0, 20000), filename: originalname });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to read file.', details: err.message });
+  }
+});
+
+// AI field suggestions — file brief mode or live web research mode
+app.post('/api/ai/suggest', async (req, res) => {
+  const { section, clientName, engagementType, briefText, mode } = req.body;
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(503).json({ error: 'ANTHROPIC_API_KEY not configured. Add it in Vercel → Project Settings → Environment Variables, then redeploy.' });
+  }
+  const cfg = AI_SECTIONS[section];
+  if (!cfg) return res.status(400).json({ error: `Unknown section: ${section}` });
+
+  try {
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const system = `You are an expert assistant helping fill a proposal template for Distillery Capital, an Australian corporate and real estate advisory firm. Your output must be ONLY a valid JSON object — no explanation, no markdown, no code fences. Use Australian English.`;
+    const fieldList = cfg.fields.join(', ');
+
+    let content, tools;
+    if (mode === 'research') {
+      content = `Search the web for the organisation "${clientName}"${engagementType ? ` for a "${engagementType}" engagement` : ''}. Extract or infer values for: ${fieldList}.\n\n${cfg.instruction}\n\nReturn ONLY a JSON object with those exact field names. Arrays where specified. Use "" for unknown fields.`;
+      tools = [{ type: 'web_search_20250305', name: 'web_search' }];
+    } else {
+      content = `Based on this document, extract values for: ${fieldList}.\n\n${cfg.instruction}\n\nDocument:\n---\n${briefText}\n---\n\nReturn ONLY a JSON object with those exact field names. Arrays where specified. Use "" for fields not found.`;
+    }
+
+    const params = {
+      model: mode === 'research' ? 'claude-sonnet-4-6' : 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      system,
+      messages: [{ role: 'user', content }]
+    };
+    if (tools) params.tools = tools;
+
+    const response = await anthropic.messages.create(params);
+    const textBlock = response.content.find(c => c.type === 'text');
+    const raw = textBlock?.text || '{}';
+    const match = raw.match(/\{[\s\S]*\}/);
+    const suggestions = match ? JSON.parse(match[0]) : {};
+    res.json({ success: true, suggestions });
+  } catch (err) {
+    console.error('AI suggest error:', err);
+    res.status(500).json({ error: 'AI suggestion failed.', details: err.message });
   }
 });
 
