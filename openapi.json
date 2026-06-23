@@ -7,8 +7,12 @@
   },
   "servers": [
     {
+      "url": "https://files-e6oal1jps-ryan-gpa-s-projects.vercel.app",
+      "description": "Production (Vercel)"
+    },
+    {
       "url": "http://localhost:3000",
-      "description": "Local Development Server"
+      "description": "Local Development"
     }
   ],
   "paths": {
