@@ -17,11 +17,11 @@ app.use(express.static(path.join(__dirname)));
 // Configure multer for memory storage of uploaded cover image
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Ensure drafts directory exists
+// Ensure drafts directory exists (skipped on read-only filesystems like Vercel)
 const DRAFTS_DIR = path.join(__dirname, 'drafts');
-if (!fs.existsSync(DRAFTS_DIR)) {
-  fs.mkdirSync(DRAFTS_DIR);
-}
+try {
+  if (!fs.existsSync(DRAFTS_DIR)) fs.mkdirSync(DRAFTS_DIR);
+} catch (e) {}
 
 // ── API: Generate Proposal ───────────────────────────────────────────────────
 app.post('/api/generate', upload.single('cover_image'), (req, res) => {
