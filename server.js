@@ -194,10 +194,9 @@ app.post('/api/ai/suggest', async (req, res) => {
     const system = `You are an expert assistant helping fill a proposal template for Distillery Capital, an Australian corporate and real estate advisory firm. Your output must be ONLY a valid JSON object — no explanation, no markdown, no code fences. Use Australian English.`;
     const fieldList = cfg.fields.join(', ');
 
-    let content, tools;
+    let content;
     if (mode === 'research') {
-      content = `Search the web for the organisation "${clientName}"${engagementType ? ` for a "${engagementType}" engagement` : ''}. Extract or infer values for: ${fieldList}.\n\n${cfg.instruction}\n\nReturn ONLY a JSON object with those exact field names. Arrays where specified. Use "" for unknown fields.`;
-      tools = [{ type: 'web_search_20250305', name: 'web_search' }];
+      content = `Using your knowledge, research the organisation "${clientName}"${engagementType ? ` for a "${engagementType}" engagement` : ''}. Extract or infer values for: ${fieldList}.\n\n${cfg.instruction}\n\nIf you do not have reliable knowledge of this specific organisation, make reasonable inferences based on the name and context. Return ONLY a JSON object with those exact field names. Arrays where specified. Use "" for fields you cannot determine.`;
     } else {
       content = `Based on this document, extract values for: ${fieldList}.\n\n${cfg.instruction}\n\nDocument:\n---\n${briefText}\n---\n\nReturn ONLY a JSON object with those exact field names. Arrays where specified. Use "" for fields not found.`;
     }
@@ -208,7 +207,6 @@ app.post('/api/ai/suggest', async (req, res) => {
       system,
       messages: [{ role: 'user', content }]
     };
-    if (tools) params.tools = tools;
 
     const response = await anthropic.messages.create(params);
     const textBlock = response.content.find(c => c.type === 'text');
