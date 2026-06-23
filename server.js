@@ -203,7 +203,7 @@ app.post('/api/ai/suggest', async (req, res) => {
     }
 
     const params = {
-      model: mode === 'research' ? 'claude-sonnet-4-6' : 'claude-haiku-4-5-20251001',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
       system,
       messages: [{ role: 'user', content }]
@@ -218,7 +218,11 @@ app.post('/api/ai/suggest', async (req, res) => {
     res.json({ success: true, suggestions });
   } catch (err) {
     console.error('AI suggest error:', err);
-    res.status(500).json({ error: 'AI suggestion failed.', details: err.message });
+    const isRateLimit = err.message?.toLowerCase().includes('rate') || err.status === 429;
+    res.status(isRateLimit ? 429 : 500).json({
+      error: isRateLimit ? 'Rate limit reached — wait 30 seconds and try again.' : 'AI suggestion failed.',
+      details: err.message
+    });
   }
 });
 
@@ -236,26 +240,27 @@ app.post('/api/ai/cover-image', async (req, res) => {
 
   try {
     const apiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instances: [{ prompt }],
-          parameters: { sampleCount: 1, aspectRatio: '16:9' }
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
         })
       }
     );
     const data = await apiRes.json();
     if (!apiRes.ok) {
-      console.error('Gemini Imagen error:', JSON.stringify(data));
+      console.error('Gemini cover error:', JSON.stringify(data));
       return res.status(500).json({ error: 'Gemini API error', details: data?.error?.message || 'Unknown error' });
     }
-    const prediction = data.predictions?.[0];
-    if (!prediction?.bytesBase64Encoded) {
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const imagePart = parts.find(p => p.inlineData?.data);
+    if (!imagePart) {
       return res.status(500).json({ error: 'No image returned from Gemini.' });
     }
-    res.json({ imageBase64: prediction.bytesBase64Encoded, mimeType: prediction.mimeType || 'image/png' });
+    res.json({ imageBase64: imagePart.inlineData.data, mimeType: imagePart.inlineData.mimeType || 'image/png' });
   } catch (err) {
     console.error('Cover gen error:', err);
     res.status(500).json({ error: 'Cover generation failed.', details: err.message });
