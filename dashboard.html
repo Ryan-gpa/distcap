@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Distillery Capital — Operations</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --navy:#003D5C;
+  --blue:#0066A4;
+  --gold:#C8A84B;
+  --green:#1D6E40;
+  --amber:#B45309;
+  --bg:#F2F5F9;
+  --card:#FFFFFF;
+  --ink:#1C2333;
+  --muted:#64748B;
+  --rule:#D1D9E6;
+  --mono:'Cascadia Code','Consolas',monospace;
+}
+
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── Header ── */
+.hdr{
+  background:#fff;
+  border-bottom:2px solid var(--navy);
+  padding:0 40px;
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-logo{height:36px;width:auto}
+.brand-name{font-size:17px;font-weight:700;color:var(--navy);letter-spacing:-0.02em}
+.brand-sub{font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:1px}
+.hdr-date{font-size:11px;color:var(--muted);font-family:var(--mono)}
+
+/* ── Main ── */
+.main{
+  flex:1;
+  max-width:1140px;
+  width:100%;
+  margin:0 auto;
+  padding:48px 40px 64px;
+}
+
+.page-title{
+  font-size:28px;font-weight:700;color:var(--navy);
+  letter-spacing:-0.03em;line-height:1.1;
+  margin-bottom:6px;
+}
+.page-sub{font-size:14px;color:var(--muted);margin-bottom:40px}
+
+/* ── Tool grid ── */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+  margin-bottom:40px;
+}
+
+.tool-card{
+  background:var(--card);
+  border:1.5px solid var(--rule);
+  display:flex;
+  flex-direction:column;
+  text-decoration:none;
+  color:inherit;
+  transition:border-color 0.15s,box-shadow 0.15s;
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+}
+.tool-card:hover{
+  border-color:var(--navy);
+  box-shadow:0 4px 24px rgba(0,61,92,0.10);
+}
+.tool-card::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;
+  height:3px;
+  background:var(--card-accent, var(--navy));
+}
+.tc-proposals { --card-accent: var(--navy) }
+.tc-agreements{ --card-accent: var(--blue) }
+.tc-pipeline  { --card-accent: var(--green)}
+
+.card-body{padding:24px 24px 20px;flex:1;display:flex;flex-direction:column}
+
+.card-icon{
+  width:40px;height:40px;
+  background:var(--bg);
+  border:1.5px solid var(--rule);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  margin-bottom:16px;
+  flex-shrink:0;
+}
+
+.card-title{
+  font-size:17px;font-weight:700;color:var(--navy);
+  letter-spacing:-0.02em;margin-bottom:4px;
+}
+.card-desc{
+  font-size:12px;color:var(--muted);line-height:1.6;
+  margin-bottom:18px;flex:1;
+}
+
+.doc-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:20px}
+.doc-tag{
+  font-size:10px;font-weight:600;letter-spacing:0.04em;
+  padding:3px 8px;
+  background:var(--bg);
+  border:1px solid var(--rule);
+  color:var(--muted);
+}
+
+/* pipeline stats */
+.pipe-stats{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:8px;margin-bottom:20px;
+}
+.stat{
+  background:var(--bg);border:1px solid var(--rule);
+  padding:10px 12px;
+}
+.stat-num{font-size:22px;font-weight:700;color:var(--ink);line-height:1;font-family:var(--mono)}
+.stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:3px}
+.stat-num.amber{color:var(--amber)}
+.stat-num.green{color:var(--green)}
+
+.card-footer{
+  padding:14px 24px;
+  border-top:1px solid var(--rule);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.card-cta{
+  font-size:12px;font-weight:700;letter-spacing:0.04em;
+  text-transform:uppercase;color:var(--navy);
+  text-decoration:none;
+  display:flex;align-items:center;gap:6px;
+}
+.card-cta:hover{color:var(--blue)}
+.card-cta svg{transition:transform 0.15s}
+.tool-card:hover .card-cta svg{transform:translateX(3px)}
+
+.status-pill{
+  font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  padding:2px 8px;
+}
+.pill-active{background:#D1FAE5;color:var(--green)}
+.pill-live  {background:#DBEAFE;color:var(--blue)}
+
+/* ── Secondary row — docs ── */
+.section-label{
+  font-size:10px;font-weight:700;letter-spacing:0.12em;
+  text-transform:uppercase;color:var(--muted);
+  margin-bottom:12px;
+}
+.doc-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+.doc-card{
+  background:var(--card);
+  border:1.5px solid var(--rule);
+  padding:16px;
+  display:flex;flex-direction:column;gap:6px;
+  text-decoration:none;color:inherit;
+  transition:border-color 0.15s;
+}
+.doc-card:hover{border-color:var(--navy)}
+.doc-card-icon{font-size:16px}
+.doc-card-title{font-size:12px;font-weight:700;color:var(--ink)}
+.doc-card-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.doc-card-link{
+  font-size:10px;font-weight:700;letter-spacing:0.06em;
+  text-transform:uppercase;color:var(--blue);margin-top:4px;
+}
+
+/* ── Footer ── */
+.footer{
+  padding:16px 40px;border-top:1px solid var(--rule);
+  font-size:10px;color:var(--muted);
+  display:flex;justify-content:space-between;
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="brand">
+    <img src="logo_crop.png" alt="Distillery Capital" class="brand-logo">
+    <div>
+      <div class="brand-name">Distillery Capital</div>
+      <div class="brand-sub">Document Operations</div>
+    </div>
+  </div>
+  <div class="hdr-date" id="hdrDate">—</div>
+</header>
+
+<main class="main">
+  <div class="page-title">Operations Hub</div>
+  <div class="page-sub">Select a tool to generate, issue or track client documents.</div>
+
+  <!-- Main tools -->
+  <div class="grid">
+
+    <!-- Proposals -->
+    <a class="tool-card tc-proposals" href="/proposals">
+      <div class="card-body">
+        <div class="card-icon">📋</div>
+        <div class="card-title">Engagement Proposals</div>
+        <div class="card-desc">Generate client-facing proposals with AI-assisted field population, scope definition, commercial terms and cover design.</div>
+        <div class="doc-tags">
+          <span class="doc-tag">Proposal Brief</span>
+          <span class="doc-tag">Scope of Services</span>
+          <span class="doc-tag">Commercial Schedule</span>
+          <span class="doc-tag">Team Profile</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="card-cta">Open Generator <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="status-pill pill-active">Active</span>
+      </div>
+    </a>
+
+    <!-- Agreements -->
+    <a class="tool-card tc-agreements" href="/nda">
+      <div class="card-body">
+        <div class="card-icon">✍️</div>
+        <div class="card-title">NDAs &amp; Agreements</div>
+        <div class="card-desc">Issue non-disclosure, circumvention and service agreements. Documents auto-route to Dropbox Sign for counterparty execution.</div>
+        <div class="doc-tags">
+          <span class="doc-tag">NDA Standard</span>
+          <span class="doc-tag">NDA Non-Circumvention</span>
+          <span class="doc-tag">Service Agreement</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="card-cta">Open Builder <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="status-pill pill-active">Active</span>
+      </div>
+    </a>
+
+    <!-- Pipeline -->
+    <a class="tool-card tc-pipeline" href="/pipeline">
+      <div class="card-body">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Document Pipeline</div>
+        <div class="card-desc">Live tracking of all issued agreements. Monitor signature status, send client reminders and view full execution history.</div>
+        <div class="pipe-stats">
+          <div class="stat">
+            <div class="stat-num amber" id="statPending">—</div>
+            <div class="stat-lbl">Pending Signature</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num green" id="statExecuted">—</div>
+            <div class="stat-lbl">Executed</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="card-cta">Open Pipeline <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="status-pill pill-live">Live</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- Document types reference -->
+  <div class="section-label">All Client Documents</div>
+  <div class="doc-grid">
+    <a class="doc-card" href="/proposals">
+      <div class="doc-card-icon">📄</div>
+      <div class="doc-card-title">Engagement Proposal</div>
+      <div class="doc-card-desc">Full proposal brief with cover, scope, team and fee schedule</div>
+      <div class="doc-card-link">Generate →</div>
+    </a>
+    <a class="doc-card" href="/nda?type=nda_standard">
+      <div class="doc-card-icon">🤝</div>
+      <div class="doc-card-title">NDA — Standard</div>
+      <div class="doc-card-desc">Mutual non-disclosure agreement for deal-specific information sharing</div>
+      <div class="doc-card-link">Generate →</div>
+    </a>
+    <a class="doc-card" href="/nda?type=nda_circumvention">
+      <div class="doc-card-icon">🔒</div>
+      <div class="doc-card-title">NDA — Non-Circumvention</div>
+      <div class="doc-card-desc">Non-circumvention agreement protecting deal introductions and referrals</div>
+      <div class="doc-card-link">Generate →</div>
+    </a>
+    <a class="doc-card" href="/nda?type=service_agreement">
+      <div class="doc-card-icon">📑</div>
+      <div class="doc-card-title">Service Agreement</div>
+      <div class="doc-card-desc">Consultancy service agreement with fees, scope and IP provisions</div>
+      <div class="doc-card-link">Generate →</div>
+    </a>
+  </div>
+</main>
+
+<footer class="footer">
+  <span>Distillery Capital Pty Ltd — Internal tooling</span>
+  <span>Start server: <code>node -r dotenv/config server.js</code></span>
+</footer>
+
+<script>
+// Header date
+const d = new Date();
+document.getElementById('hdrDate').textContent =
+  d.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+// Pipeline stats
+fetch('/api/pipeline-status')
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('statPending').textContent  = data.pending.length;
+    document.getElementById('statExecuted').textContent = data.executed.length;
+  })
+  .catch(() => {
+    document.getElementById('statPending').textContent  = '—';
+    document.getElementById('statExecuted').textContent = '—';
+  });
+</script>
+</body>
+</html>

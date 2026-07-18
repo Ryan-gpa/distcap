@@ -10,6 +10,137 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* ═══════════════════════════════════════════════════
+       LIGHT THEME — full override of dark style.css base
+       ═══════════════════════════════════════════════════ */
+    :root {
+      --color-bg-base:        #f1f4f8;
+      --color-bg-surface:     #ffffff;
+      --color-border:         #e2e8f0;
+      --color-text-primary:   #0f172a;
+      --color-text-secondary: #4b5563;
+      --color-text-muted:     #9ca3af;
+      --shadow-premium:       0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.07);
+    }
+    body { background: #f1f4f8 !important; color: #0f172a !important; overflow: hidden !important; }
+    .glass-bg { display: none !important; }
+    .app-container {
+      position: fixed !important; inset: 0 !important;
+      width: 100% !important; height: 100% !important;
+      max-width: none !important; max-height: none !important;
+      border-radius: 0 !important; border: none !important;
+      background: #ffffff !important;
+      backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+      box-shadow: none !important;
+    }
+    /* Header — navy brand bar */
+    .app-header { background: #00538A !important; border-bottom: none !important; padding: 12px 40px !important; }
+    .brand-text h1 { color: #ffffff !important; font-size: 19px !important; }
+    .brand-text p  { color: rgba(255,255,255,0.65) !important; font-size: 10px !important; }
+    .app-header .btn {
+      background: rgba(255,255,255,0.15) !important;
+      border: 1px solid rgba(255,255,255,0.3) !important;
+      color: #ffffff !important; font-size: 13px !important; padding: 8px 18px !important;
+    }
+    .app-header .btn:hover { background: rgba(255,255,255,0.25) !important; }
+    .app-header .btn-danger {
+      background: rgba(220,38,38,0.7) !important;
+      border-color: rgba(220,38,38,0.5) !important;
+    }
+    .app-header .btn-danger:hover { background: rgba(220,38,38,0.9) !important; }
+    /* Sidebar */
+    .sidebar-wizard {
+      width: 210px !important; padding: 20px 0 !important;
+      background: #f8fafc !important; border-right: 1px solid #e2e8f0 !important;
+    }
+    .step-item { border-left: 3px solid transparent; padding: 12px 20px; }
+    .step-item:hover { background: rgba(0,83,138,0.04) !important; }
+    .step-item.active { background: rgba(0,83,138,0.07) !important; border-left-color: #00538A !important; }
+    .step-num {
+      background: #e9ecef !important; color: #6b7280 !important;
+      font-size: 12px !important; font-weight: 700 !important;
+      width: 26px !important; height: 26px !important; min-width: 26px !important;
+    }
+    .step-item.active .step-num { background: #00538A !important; color: #fff !important; }
+    .step-title { color: #6b7280 !important; font-size: 13.5px !important; }
+    .step-item.active .step-title { color: #0f172a !important; }
+    /* Form area */
+    .form-container { background: #ffffff !important; padding: 28px 52px !important; }
+    .form-tab h2 { font-size: 24px !important; color: #0f172a !important; margin-bottom: 4px !important; }
+    .tab-subtitle { font-size: 14px !important; color: #6b7280 !important; margin-bottom: 18px !important; }
+    .form-divider { background: #e2e8f0 !important; }
+    /* Labels & inputs */
+    .form-group label {
+      font-size: 11.5px !important; font-weight: 700 !important;
+      color: #374151 !important; letter-spacing: 0.5px !important; text-transform: uppercase !important;
+    }
+    input[type="text"], input[type="email"], textarea, select {
+      background: #ffffff !important; border: 1.5px solid #d1d5db !important;
+      color: #0f172a !important; font-size: 15px !important;
+      padding: 10px 14px !important; border-radius: 6px !important;
+    }
+    input::placeholder, textarea::placeholder { color: #adb5bd !important; font-size: 14px !important; }
+    input:focus, textarea:focus, select:focus {
+      border-color: #00538A !important;
+      box-shadow: 0 0 0 3px rgba(0,83,138,0.1) !important;
+      background: #ffffff !important;
+    }
+    /* AI bar */
+    .ai-bar {
+      background: #f0f7ff !important; border: 1px solid #bfdbfe !important;
+      border-radius: 8px !important; padding: 10px 16px !important; margin-bottom: 20px !important;
+    }
+    .btn-ai {
+      background: rgba(0,83,138,0.1) !important; border: 1px solid rgba(0,83,138,0.2) !important;
+      color: #00538A !important; border-radius: 6px !important;
+    }
+    .btn-ai:hover { background: rgba(0,83,138,0.18) !important; }
+    .btn-ai-research {
+      background: #00538A !important; color: #fff !important; border-color: #00538A !important;
+    }
+    .btn-ai-research:hover { background: #004272 !important; }
+    /* Action bar */
+    .action-bar {
+      background: #f8fafc !important; border-top: 1px solid #e2e8f0 !important;
+      padding: 14px 52px !important;
+    }
+    .btn { font-size: 14px !important; padding: 10px 24px !important; }
+    .btn-primary { background: #00538A !important; border-color: #00538A !important; color: #ffffff !important; }
+    .btn-primary:hover { background: #004272 !important; }
+    .action-bar .btn-secondary {
+      background: #ffffff !important; border: 1.5px solid #d1d5db !important; color: #374151 !important;
+    }
+    .action-bar .btn-secondary:hover { background: #f1f4f8 !important; }
+    /* Modals */
+    .modal-card { background: #ffffff !important; border: 1px solid #e2e8f0 !important; }
+    .modal-header { border-bottom: 1px solid #e2e8f0 !important; }
+    .modal-header h2 { color: #0f172a !important; font-size: 18px !important; }
+    .modal-body p { color: #374151 !important; font-size: 15px !important; line-height: 1.6 !important; }
+    .modal-footer { border-top: 1px solid #e2e8f0 !important; }
+    /* Deliverables */
+    .deliverable-item {
+      background: #f8fafc !important; border: 1px solid #e2e8f0 !important;
+      border-radius: 6px !important; color: #0f172a !important;
+    }
+    .deliverable-remove { color: #6b7280 !important; }
+    .deliverable-remove:hover { color: #ef4444 !important; }
+    .add-deliverable-btn {
+      border: 1.5px dashed #d1d5db !important; color: #6b7280 !important;
+      background: transparent !important; border-radius: 6px !important;
+    }
+    .add-deliverable-btn:hover { border-color: #00538A !important; color: #00538A !important; }
+    /* Fee cards */
+    .fee-card { background: #f8fafc !important; border: 1.5px solid #e2e8f0 !important; border-radius: 8px !important; }
+    .fee-card.active { border-color: #00538A !important; background: #eff6ff !important; }
+    .fee-label { color: #374151 !important; }
+    /* Draft preview */
+    .draft-item {
+      background: #f8fafc !important; border: 1px solid #e2e8f0 !important;
+      border-radius: 6px !important; color: #0f172a !important;
+    }
+    .draft-item:hover { border-color: #00538A !important; }
+  </style>
 </head>
 <body>
   <div class="glass-bg"></div>
@@ -21,10 +152,12 @@
         <img src="logo_crop.png" alt="Distillery Capital Logo" class="brand-logo">
         <div class="brand-text">
           <h1>Distillery Capital</h1>
-          <p>PROPOSAL TEMPLATE SYSTEM &bull; PHASE 2</p>
+          <p>PROPOSAL GENERATOR</p>
         </div>
       </div>
       <div class="header-actions">
+        <a href="/" class="btn btn-secondary" style="text-decoration:none">← Dashboard</a>
+        <a href="/nda" class="btn btn-secondary" style="text-decoration:none">NDAs &amp; Agreements →</a>
         <button type="button" id="loadDemoBtn" class="btn btn-secondary">Load PCYC NSW Demo</button>
         <button type="button" id="clearFormBtn" class="btn btn-danger">Clear Form</button>
         <label class="btn btn-secondary brief-upload-btn" id="briefUploadLabel" title="Upload a client brief, email or document to auto-fill form fields">
@@ -358,11 +491,7 @@
           <div class="form-tab" id="tab-assets">
             <h2>Cover & Assets</h2>
             <p class="tab-subtitle">Optionally upload a custom image for the proposal cover sheet.</p>
-            <div class="ai-bar">
-              <span class="ai-label">✨ AI</span>
-              <button type="button" id="generateCoverBtn" class="btn-ai btn-ai-research">🎨 Generate Cover with Gemini</button>
-              <span class="ai-status" id="ai-status-cover"></span>
-            </div>
+            <span class="ai-status" id="ai-status-cover"></span>
 
             <div class="form-group">
               <label>Custom Cover Image</label>

@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Distillery Capital — NDA & Agreement Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Fonts load async; fallback chain in style.css handles any network failure -->
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ═══════════════════════════════════════════════════
+       LIGHT THEME — full override of dark style.css base
+       ═══════════════════════════════════════════════════ */
+
+    /* CSS variable reset for light mode */
+    :root {
+      --color-bg-base:      #f1f4f8;
+      --color-bg-surface:   #ffffff;
+      --color-border:       #e2e8f0;
+      --color-text-primary: #0f172a;
+      --color-text-secondary: #4b5563;
+      --color-text-muted:   #9ca3af;
+      --shadow-premium:     0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.07);
+    }
+
+    /* Body & background */
+    body {
+      background: #f1f4f8 !important;
+      color: #0f172a !important;
+      overflow: hidden !important;
+    }
+    .glass-bg { display: none !important; }
+
+    /* Full-screen container */
+    .app-container {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+      max-height: none !important;
+      border-radius: 0 !important;
+      border: none !important;
+      background: #ffffff !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      box-shadow: none !important;
+    }
+
+    /* ── Header — navy brand bar ── */
+    .app-header {
+      background: #00538A !important;
+      border-bottom: none !important;
+      padding: 12px 40px !important;
+    }
+    .brand-text h1 { color: #ffffff !important; font-size: 19px !important; }
+    .brand-text p  { color: rgba(255,255,255,0.65) !important; font-size: 10px !important; }
+    .app-header .btn {
+      background: rgba(255,255,255,0.15) !important;
+      border: 1px solid rgba(255,255,255,0.3) !important;
+      color: #ffffff !important;
+      font-size: 13px !important;
+      padding: 8px 18px !important;
+    }
+    .app-header .btn:hover { background: rgba(255,255,255,0.25) !important; }
+
+    /* ── Mode bar ── */
+    .mode-bar {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 9px 40px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .mode-bar-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #9ca3af;
+      margin-right: 8px;
+    }
+    .mode-option { position: relative; }
+    .mode-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .mode-option label {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 13px; border-radius: 6px; cursor: pointer;
+      font-size: 13px; font-weight: 500; color: #6b7280;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .mode-option input:checked + label {
+      background: rgba(0,83,138,0.08);
+      border-color: rgba(0,83,138,0.3);
+      color: #00538A;
+      font-weight: 600;
+    }
+    .mode-option label:hover { color: #374151; background: #f0f4f8; }
+    .mode-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #cbd5e1; flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .mode-option input:checked + label .mode-dot { background: #00538A; }
+    .mode-hint {
+      margin-left: 14px; font-size: 12px; color: #9ca3af;
+      font-style: italic; border-left: 1px solid #e2e8f0;
+      padding-left: 14px;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar-wizard {
+      width: 210px !important;
+      padding: 20px 0 !important;
+      background: #f8fafc !important;
+      border-right: 1px solid #e2e8f0 !important;
+    }
+    .step-item { border-left: 3px solid transparent; padding: 12px 20px; }
+    .step-item:hover { background: rgba(0,83,138,0.04) !important; }
+    .step-item.active {
+      background: rgba(0,83,138,0.07) !important;
+      border-left-color: #00538A !important;
+    }
+    .step-num {
+      background: #e9ecef !important; color: #6b7280 !important;
+      font-size: 12px !important; font-weight: 700 !important;
+      width: 26px !important; height: 26px !important;
+      min-width: 26px !important;
+    }
+    .step-item.active .step-num { background: #00538A !important; color: #fff !important; }
+    .step-title { color: #6b7280 !important; font-size: 13.5px !important; }
+    .step-item.active .step-title { color: #0f172a !important; }
+
+    /* ── Form area ── */
+    .form-container {
+      background: #ffffff !important;
+      padding: 28px 52px !important;
+    }
+    .form-tab h2 {
+      font-size: 24px !important;
+      color: #0f172a !important;
+      margin-bottom: 4px !important;
+    }
+    .tab-subtitle { font-size: 14px !important; color: #6b7280 !important; margin-bottom: 18px !important; }
+    .form-divider { background: #e2e8f0 !important; }
+
+    /* ── Field labels & inputs ── */
+    .form-group label {
+      font-size: 11.5px !important;
+      font-weight: 700 !important;
+      color: #374151 !important;
+      letter-spacing: 0.5px !important;
+      text-transform: uppercase !important;
+    }
+    input[type="text"],
+    input[type="email"],
+    textarea {
+      background: #ffffff !important;
+      border: 1.5px solid #d1d5db !important;
+      color: #0f172a !important;
+      font-size: 15px !important;
+      padding: 10px 14px !important;
+      border-radius: 6px !important;
+    }
+    input::placeholder, textarea::placeholder { color: #adb5bd !important; font-size: 14px !important; }
+    input:focus, textarea:focus {
+      border-color: #00538A !important;
+      box-shadow: 0 0 0 3px rgba(0,83,138,0.1) !important;
+      background: #ffffff !important;
+    }
+
+    /* ── Document type cards ── */
+    .doc-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .doc-type-card { position: relative; }
+    .doc-type-card input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .doc-type-card label {
+      display: flex; flex-direction: column;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px; padding: 16px 14px; cursor: pointer;
+      background: #f8fafc;
+      height: 100%; box-sizing: border-box;
+      transition: all 0.15s ease;
+    }
+    .doc-type-card label:hover { background: #f0f7ff; border-color: #93c5fd; }
+    .doc-type-card input:checked + label {
+      background: #eff6ff;
+      border-color: #00538A;
+      box-shadow: 0 0 0 1px #00538A inset;
+    }
+    .doc-type-icon { font-size: 22px; margin-bottom: 8px; }
+    .doc-type-name {
+      font-family: 'Outfit', sans-serif; font-weight: 600;
+      font-size: 14px !important; color: #0f172a; margin-bottom: 5px;
+    }
+    .doc-type-desc { font-size: 12px !important; color: #6b7280; line-height: 1.5; flex: 1; }
+
+    /* ── Info panel ── */
+    .info-panel {
+      background: #f0f7ff;
+      border: 1px solid #bfdbfe;
+      border-left: 3px solid #00538A;
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px; margin-bottom: 18px;
+    }
+    .info-panel-title {
+      font-family: 'Outfit', sans-serif; font-weight: 600;
+      font-size: 14px !important; color: #00538A;
+      margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;
+    }
+    .info-panel-body { font-size: 13.5px !important; color: #374151; line-height: 1.65; }
+    .info-panel-body p { margin: 0 0 8px 0; }
+    .info-panel-body p:last-child { margin-bottom: 0; }
+    .info-panel-body strong { color: #0f172a; }
+    .info-panel-body ul { margin: 6px 0 8px 0; padding-left: 18px; }
+    .info-panel-body ul li { margin-bottom: 3px; }
+    .info-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .info-tag {
+      font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px;
+      background: rgba(0,83,138,0.08); color: #00538A;
+      border: 1px solid rgba(0,83,138,0.2); letter-spacing: 0.02em;
+    }
+
+    /* ── Tab context blurbs ── */
+    .tab-context {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 3px solid #00538A;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px; margin-bottom: 18px;
+      font-size: 13px !important; color: #4b5563; line-height: 1.6;
+    }
+    .tab-context strong { color: #0f172a; }
+
+    /* ── Field hints ── */
+    .field-hint {
+      display: block; font-size: 12px !important; color: #6b7280;
+      margin-top: 3px; line-height: 1.5;
+    }
+    .field-hint.warn { color: #b45309; }
+    .field-hint.info { color: #1d4ed8; }
+    .field-hint a { color: #00538A; }
+
+    /* ── Schedule sections ── */
+    .schedule-section {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 3px solid #00538A;
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px; margin-bottom: 18px;
+    }
+    .schedule-section h4 {
+      font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 700;
+      color: #00538A; text-transform: uppercase; letter-spacing: 0.08em;
+      margin: 0 0 4px 0;
+    }
+    .schedule-section .section-context {
+      font-size: 13px !important; color: #6b7280;
+      margin: 0 0 14px 0; line-height: 1.5;
+    }
+
+    /* ── Conflict toggle ── */
+    .conflict-toggle { display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+    .conflict-toggle label {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px; border-radius: 6px; cursor: pointer;
+      font-size: 14px !important; color: #4b5563;
+      background: #ffffff; border: 1.5px solid #d1d5db;
+      transition: all 0.15s ease;
+    }
+    .conflict-toggle label:has(input:checked) {
+      background: #eff6ff; border-color: #00538A; color: #0f172a;
+    }
+    .conflict-toggle input[type="radio"] { accent-color: #00538A; }
+
+    /* ── Action bar ── */
+    .action-bar {
+      background: #f8fafc !important;
+      border-top: 1px solid #e2e8f0 !important;
+      padding: 14px 52px !important;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .action-nav { display: flex; gap: 10px; }
+    .btn {
+      font-size: 14px !important;
+      padding: 10px 24px !important;
+    }
+    .btn-primary {
+      background: #00538A !important;
+      border-color: #00538A !important;
+      color: #ffffff !important;
+    }
+    .btn-primary:hover { background: #004272 !important; }
+    .action-bar .btn-secondary {
+      background: #ffffff !important;
+      border: 1.5px solid #d1d5db !important;
+      color: #374151 !important;
+    }
+    .action-bar .btn-secondary:hover { background: #f1f4f8 !important; }
+
+    /* ── Modals ── */
+    .modal-card {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      font-family: 'Inter', sans-serif !important;
+    }
+    .modal-header { border-bottom: 1px solid #e2e8f0 !important; }
+    .modal-header h2 { color: #0f172a !important; font-size: 18px !important; }
+    .modal-body { font-family: 'Inter', sans-serif !important; }
+    .modal-body p { color: #374151 !important; font-size: 15px !important; line-height: 1.6 !important; }
+    .modal-footer { border-top: 1px solid #e2e8f0 !important; }
+    .error-list li {
+      background: #fef2f2 !important;
+      border-left-color: #ef4444 !important;
+      color: #374151 !important;
+      font-size: 14px !important;
+    }
+    .loading-card {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+    .loading-card h2 { color: #0f172a !important; font-size: 18px !important; }
+    .loading-card p { color: #6b7280 !important; font-size: 14px !important; }
+
+    @media (max-width: 700px) { .doc-type-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="glass-bg"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-block">
+        <img src="logo_crop.png" alt="Distillery Capital Logo" class="brand-logo">
+        <div class="brand-text">
+          <h1>Distillery Capital</h1>
+          <p>NDA &amp; AGREEMENT GENERATOR</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="/" class="btn btn-secondary" style="text-decoration:none">← Dashboard</a>
+      </div>
+    </header>
+
+    <!-- Mode selector -->
+    <div class="mode-bar">
+      <span class="mode-bar-label">Mode</span>
+      <div class="mode-option">
+        <input type="radio" name="form_mode" id="mode_new" value="new" checked>
+        <label for="mode_new"><span class="mode-dot"></span>New engagement</label>
+      </div>
+      <div class="mode-option">
+        <input type="radio" name="form_mode" id="mode_amend" value="amend">
+        <label for="mode_amend"><span class="mode-dot"></span>Amend existing</label>
+      </div>
+      <div class="mode-option">
+        <input type="radio" name="form_mode" id="mode_annotate" value="annotate">
+        <label for="mode_annotate"><span class="mode-dot"></span>Add notes only</label>
+      </div>
+      <span class="mode-hint" id="modeHint">Fill in all fields below — a new engagement will be created.</span>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="app-workspace">
+      <!-- Left Sidebar -->
+      <aside class="sidebar-wizard">
+        <ul class="wizard-steps">
+          <li class="step-item active" data-tab="doctype">
+            <span class="step-num">A</span>
+            <span class="step-title">Document Type</span>
+          </li>
+          <li class="step-item" data-tab="party">
+            <span class="step-num">B</span>
+            <span class="step-title" id="sidebarPartyLabel">Party Details</span>
+          </li>
+          <li class="step-item" data-tab="engagement">
+            <span class="step-num">C</span>
+            <span class="step-title">Engagement Details</span>
+          </li>
+          <li class="step-item" data-tab="schedule" id="scheduleStep" style="display:none">
+            <span class="step-num">D</span>
+            <span class="step-title">Schedule 1 (Services)</span>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Right Form Panel -->
+      <section class="form-container">
+        <form id="ndaForm" autocomplete="off">
+
+          <!-- ══ Tab A: Document Type ══════════════════════════════════════════ -->
+          <div class="form-tab active" id="tab-doctype">
+            <h2>Document Type</h2>
+            <p class="tab-subtitle">Select the type of agreement you need to generate. The contextual guide below updates as you choose.</p>
+
+            <div class="doc-type-grid">
+              <div class="doc-type-card">
+                <input type="radio" name="doc_type" id="dt_nda" value="nda_standard" checked>
+                <label for="dt_nda">
+                  <div class="doc-type-icon">🤝</div>
+                  <div class="doc-type-name">Non-Disclosure Agreement</div>
+                  <div class="doc-type-desc">Mutual NDA for clients, partners, or counterparties. Both parties are bound as Discloser and Recipient simultaneously.</div>
+                </label>
+              </div>
+              <div class="doc-type-card">
+                <input type="radio" name="doc_type" id="dt_circ" value="nda_circumvention">
+                <label for="dt_circ">
+                  <div class="doc-type-icon">🔒</div>
+                  <div class="doc-type-name">NDA + Non-Circumvention</div>
+                  <div class="doc-type-desc">Standard NDA plus a clause that prevents the other party from bypassing DistCap to act on a specific deal concept independently.</div>
+                </label>
+              </div>
+              <div class="doc-type-card">
+                <input type="radio" name="doc_type" id="dt_sa" value="service_agreement">
+                <label for="dt_sa">
+                  <div class="doc-type-icon">📋</div>
+                  <div class="doc-type-name">Service Agreement</div>
+                  <div class="doc-type-desc">Engagement contract for an external consultant or specialist working under DistCap on a live client mandate. DistCap = Client.</div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Dynamic info panel — updated by nda_app.js -->
+            <div class="info-panel" id="docTypeInfoPanel">
+              <!-- populated by JS -->
+            </div>
+
+            <!-- Circumvention concept field — shown only for NDA + Non-Circumvention -->
+            <div class="form-group col-2" id="circumventionConceptGroup" style="display:none">
+              <label for="TRANSACTION_CONCEPT">Transaction Concept Name <span style="color:#e53e3e">*</span></label>
+              <input type="text" id="TRANSACTION_CONCEPT" name="TRANSACTION_CONCEPT" placeholder="e.g. Woollahra Train Station Air Rights Development">
+              <small class="field-hint info">This is the specific deal structure or concept being disclosed. It will appear verbatim in the non-circumvention clause — be precise. E.g. "Woollahra Train Station Air Rights Development" rather than "the station project".</small>
+            </div>
+          </div>
+
+          <!-- ══ Tab B: Party Details ══════════════════════════════════════════ -->
+          <div class="form-tab" id="tab-party">
+            <h2 id="partyTabTitle">Counterparty Details</h2>
+            <p class="tab-subtitle" id="partyTabDesc">Enter details about the other party to the agreement.</p>
+
+            <!-- Context blurb — updated by JS -->
+            <div class="tab-context" id="partyContextBlurb"></div>
+
+            <!-- NDA counterparty fields -->
+            <div id="ndaPartyFields">
+              <div class="form-grid">
+                <div class="form-group col-2">
+                  <label for="COUNTERPARTY_LEGAL_ENTITY">Legal Entity Name &amp; ABN <span style="color:#e53e3e">*</span></label>
+                  <input type="text" id="COUNTERPARTY_LEGAL_ENTITY" name="COUNTERPARTY_LEGAL_ENTITY" placeholder="e.g. Acme Holdings Pty Ltd ABN 12 345 678 901">
+                  <small class="field-hint">Enter exactly as it should appear in the agreement — full legal entity name including Pty Ltd / Ltd, and the ABN in the format used on their letterhead.</small>
+                </div>
+                <div class="form-group">
+                  <label for="COUNTERPARTY_SHORT_NAME">Short Name / Abbreviation <span style="color:#e53e3e">*</span></label>
+                  <input type="text" id="COUNTERPARTY_SHORT_NAME" name="COUNTERPARTY_SHORT_NAME" placeholder="e.g. Acme">
+                  <small class="field-hint">Appears as the party heading on the signature page execution block (e.g. "NI" for National Intermodal). Use their standard internal abbreviation if they have one.</small>
+                </div>
+                <div class="form-group">
+                  <label for="COUNTERPARTY_ADDRESS">Registered / Principal Address <span style="color:#e53e3e">*</span></label>
+                  <input type="text" id="COUNTERPARTY_ADDRESS" name="COUNTERPARTY_ADDRESS" placeholder="e.g. Level 10, 1 Market Street, Sydney NSW 2000">
+                  <small class="field-hint">Use the address that appears on their ASIC registration or letterhead, not a P.O. box.</small>
+                </div>
+                <div class="form-group">
+                  <label for="COUNTERPARTY_EMAIL">Email for Formal Notices <span style="color:#e53e3e">*</span></label>
+                  <input type="email" id="COUNTERPARTY_EMAIL" name="COUNTERPARTY_EMAIL" placeholder="e.g. contact@acme.com.au">
+                  <small class="field-hint">This is the email address where legal notices under the agreement are sent. Use a monitored company address, not a personal mobile-linked address if possible.</small>
+                </div>
+                <div class="form-group">
+                  <label for="SIGNER_NAME">Signing Person's Full Name <span style="color:#e53e3e">*</span></label>
+                  <input type="text" id="SIGNER_NAME" name="SIGNER_NAME" placeholder="e.g. Jane Smith">
+                  <small class="field-hint">The individual who will receive and sign the Dropbox Sign request. Must be authorised to sign on behalf of the entity.</small>
+                </div>
+                <div class="form-group">
+                  <label for="SIGNER_EMAIL">Signer's Direct Email <span style="color:#e53e3e">*</span></label>
+                  <input type="email" id="SIGNER_EMAIL" name="SIGNER_EMAIL" placeholder="e.g. jane.smith@acme.com.au">
+                  <small class="field-hint">The Dropbox Sign request goes directly to this person. Can be the same as the notices email above.</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Service Agreement consultancy fields -->
+            <div id="saPartyFields" style="display:none">
+              <div class="form-grid">
+                <div class="form-group col-2">
+                  <label for="CONSULTANCY_LEGAL_ENTITY">Consultancy Legal Entity Name <span style="color:#e53e3e">*</span></label>
+                  <input type="text" id="CONSULTANCY_LEGAL_ENTITY" name="CONSULTANCY_LEGAL_ENTITY" placeholder="e.g. Smith Advisory Pty Ltd">
+                  <small class="field-hint">The consultant must have their own legal entity (Pty Ltd, sole trader with ABN, etc.) to be engaged as an independent contractor. If they're operating as a sole trader, use their trading name and personal ABN.</small>
+                </div>
+                <div class="form-group">
+                  <label for="CONSULTANCY_ABN">Consultancy ABN <span style="color:#e53e3e">*</span></label>
+                  <input type="text" id="CONSULTANCY_ABN" name="CONSULTANCY_ABN" placeholder="e.g. 98 765 432 109">
+                  <small class="field-hint">Required for invoicing. Verify the ABN is active at <a href="https://abr.business.gov.au" target="_blank" style="color:#00538A">abr.business.gov.au</a> before signing.</small>
+                </div>
+                <div class="form-group">
+                  <label for="CONSULTANCY_SHORT_NAME">Short Name (for signature page)</label>
+                  <input type="text" id="CONSULTANCY_SHORT_NAME" name="CONSULTANCY_SHORT_NAME" placeholder="e.g. Smith Advisory">
+                  <small class="field-hint">Optional — appears as the execution block heading on the signature page. Defaults to the legal entity name if left blank.</small>
+                </div>
+                <div class="form-group col-2">
+                  <label for="CONSULTANCY_ADDRESS">Consultancy Principal Address <span style="color:#e53e3e">*</span></label>
+                  <input type="text" id="CONSULTANCY_ADDRESS" name="CONSULTANCY_ADDRESS" placeholder="e.g. Suite 5, 100 George Street, Sydney NSW 2000">
+                </div>
+                <div class="form-group">
+                  <label for="CONSULTANCY_EMAIL">Consultancy Email for Notices <span style="color:#e53e3e">*</span></label>
+                  <input type="email" id="CONSULTANCY_EMAIL" name="CONSULTANCY_EMAIL" placeholder="e.g. john@smithadvisory.com.au">
+                  <small class="field-hint">Invoices and formal notices go to this address. Use their work email, not a personal Gmail.</small>
+                </div>
+                <div class="form-group">
+                  <label for="SA_SIGNER_NAME">Signing Person's Full Name <span style="color:#e53e3e">*</span></label>
+                  <input type="text" id="SA_SIGNER_NAME" name="SA_SIGNER_NAME" placeholder="e.g. John Smith">
+                  <small class="field-hint">The individual who will receive and sign the Dropbox Sign request on behalf of the consultancy.</small>
+                </div>
+                <div class="form-group">
+                  <label for="SA_SIGNER_EMAIL">Signer's Direct Email <span style="color:#e53e3e">*</span></label>
+                  <input type="email" id="SA_SIGNER_EMAIL" name="SA_SIGNER_EMAIL" placeholder="e.g. john@smithadvisory.com.au">
+                  <small class="field-hint">The Dropbox Sign request goes directly to this person.</small>
+                </div>
+              </div>
+
+              <div class="tab-context" style="margin-top:8px">
+                <strong>Note — independent contractor status:</strong> This agreement explicitly establishes the consultant as an independent contractor. They are responsible for their own income tax, GST registration, superannuation contributions, and workers compensation insurance. DistCap does not withhold PAYG or pay super on their behalf. If there is any doubt about whether the engagement meets the ATO's independent contractor vs employee tests, seek advice before proceeding.
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ Tab C: Engagement Details ════════════════════════════════════ -->
+          <div class="form-tab" id="tab-engagement">
+            <h2>Engagement Details</h2>
+            <p class="tab-subtitle" id="engagementTabDesc">Dates and document-specific fields.</p>
+
+            <div class="tab-context" id="engagementContextBlurb"></div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="DATE_ISSUE">Agreement Date <span style="color:#e53e3e">*</span></label>
+                <input type="text" id="DATE_ISSUE" name="DATE_ISSUE" placeholder="e.g. 29 June 2026">
+                <small class="field-hint">The date both parties sign. This triggers the 2-year confidentiality clock for NDAs and the 4-week notice period for Service Agreements. Use today's date unless backdating (check with Phil first if backdating to when discussions actually started).</small>
+              </div>
+              <div class="form-group">
+                <label for="YEAR">Copyright Year</label>
+                <input type="text" id="YEAR" name="YEAR" placeholder="e.g. 2026">
+                <small class="field-hint">Appears in the document footer. Defaults to the current year if left blank.</small>
+              </div>
+
+              <!-- Commencement date — Service Agreement only -->
+              <div class="form-group col-2" id="commencementGroup" style="display:none">
+                <label for="COMMENCEMENT_DATE">Commencement Date <span style="color:#e53e3e">*</span></label>
+                <input type="text" id="COMMENCEMENT_DATE" name="COMMENCEMENT_DATE" placeholder="e.g. 1 July 2026">
+                <small class="field-hint">When the consultant actually starts performing services — this can differ from the agreement date. The engagement has no fixed end date in the main agreement (end dates go in Schedule 1). Either party can terminate by giving 4 weeks' written notice at any time. A separate 12-week notice period applies if either party intends to cease trading entirely.</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ Tab D: Schedule 1 — Service Agreement only ════════════════════ -->
+          <div class="form-tab" id="tab-schedule">
+            <h2>Schedule 1 — Services</h2>
+            <p class="tab-subtitle">Project-specific details appended to the Service Agreement.</p>
+
+            <div class="tab-context">
+              <strong>About Schedule 1:</strong> The main agreement sets permanent terms that govern the whole relationship. Schedule 1 is filled in per project or engagement. An email confirming Schedule 1 details is legally sufficient — the full agreement doesn't need to be re-executed each time. Multiple Schedule 1s can run concurrently under one Service Agreement. All fields below are optional — leaving one blank generates a placeholder in the document that Phil and the consultant can agree by email before work begins.
+            </div>
+
+            <!-- Project Overview -->
+            <div class="schedule-section">
+              <h4>Project Overview</h4>
+              <p class="section-context">Identifies what specific work this Schedule covers. Used to scope liability — the fee cap in the liability clause applies "on a project-by-project basis" per Schedule 1.</p>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="SCHEDULE_DATE">Schedule Date</label>
+                  <input type="text" id="SCHEDULE_DATE" name="SCHEDULE_DATE" placeholder="e.g. 29 June 2026">
+                </div>
+                <div class="form-group">
+                  <label for="SCHEDULE_PROJECT">Project Name</label>
+                  <input type="text" id="SCHEDULE_PROJECT" name="SCHEDULE_PROJECT" placeholder="e.g. DFO South Wharf Disposal">
+                </div>
+                <div class="form-group col-2">
+                  <label for="SCHEDULE_PROPERTY">Property Address(es)</label>
+                  <input type="text" id="SCHEDULE_PROPERTY" name="SCHEDULE_PROPERTY" placeholder="e.g. DFO South Wharf, 20 Convention Centre Place, Melbourne VIC 3000 — or N/A">
+                  <small class="field-hint">Enter N/A for non-property engagements (e.g. fund strategy advice, capital raising).</small>
+                </div>
+                <div class="form-group col-2">
+                  <label for="SCHEDULE_OTHER_USERS">Other Intended Users of the Services</label>
+                  <input type="text" id="SCHEDULE_OTHER_USERS" name="SCHEDULE_OTHER_USERS" placeholder="e.g. Vicinity Centres RE Ltd (ACN 084 098 576) — or N/A">
+                  <small class="field-hint">DistCap's end client, if the consultant's work flows through DistCap to a third party. Important: any output used by a third party is on a <strong>strictly non-reliance basis</strong> — the consultant owes no duty of care to that party. If no third party is involved, enter N/A.</small>
+                </div>
+                <div class="form-group col-2">
+                  <label for="SCHEDULE_SERVICES">Description of Services</label>
+                  <textarea id="SCHEDULE_SERVICES" name="SCHEDULE_SERVICES" rows="4" placeholder="e.g. Provide financial modelling review, due diligence support, and transaction execution assistance in connection with the proposed disposal of DFO South Wharf retail centre..."></textarea>
+                  <small class="field-hint">Be specific and verifiable — avoid "general advisory support" or open-ended scope. Specific deliverables = clearer fee entitlements and clearer liability scope. If scope evolves, a new email confirming updated Schedule 1 details is sufficient.</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fee Structure -->
+            <div class="schedule-section">
+              <h4>Fee Structure</h4>
+              <p class="section-context">Complete all applicable fee types. Enter N/A for types that don't apply. These amounts are what DistCap pays the consultant — not what DistCap charges its own client. The pay-when-paid mechanism in the agreement means DistCap only pays the consultant once it receives cleared funds from its own client (for client-funded work). Fixed fees or retainers paid directly by DistCap are not subject to this mechanism — clarify in the description if needed.</p>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="SCHEDULE_FEE_FIXED">Fixed Fee Element</label>
+                  <input type="text" id="SCHEDULE_FEE_FIXED" name="SCHEDULE_FEE_FIXED" placeholder="e.g. $5,000 fixed for initial phase report — or N/A">
+                  <small class="field-hint">Use for clearly scoped deliverables with defined outputs (e.g. a specific report or analysis).</small>
+                </div>
+                <div class="form-group">
+                  <label for="SCHEDULE_FEE_RETAINER">Monthly Retainer</label>
+                  <input type="text" id="SCHEDULE_FEE_RETAINER" name="SCHEDULE_FEE_RETAINER" placeholder="e.g. $8,000/month ex GST for 3 months — or N/A">
+                  <small class="field-hint">Use for ongoing advisory or support work over a defined period. Specify the amount, frequency, and duration.</small>
+                </div>
+                <div class="form-group">
+                  <label for="SCHEDULE_FEE_SUCCESS">Success Fee</label>
+                  <input type="text" id="SCHEDULE_FEE_SUCCESS" name="SCHEDULE_FEE_SUCCESS" placeholder="e.g. 0.5% of transaction value on financial close — or N/A">
+                  <small class="field-hint">Only payable on successful completion of a defined milestone (e.g. financial close, unconditional exchange). Specify the trigger event precisely.</small>
+                </div>
+                <div class="form-group">
+                  <label for="SCHEDULE_FEE_ABORTIVE">Abortive Fee</label>
+                  <input type="text" id="SCHEDULE_FEE_ABORTIVE" name="SCHEDULE_FEE_ABORTIVE" placeholder="e.g. $2,500 if transaction aborts after Phase 2 commences — or N/A">
+                  <small class="field-hint">Protects the consultant if the deal falls over after substantive work has been done. Typically a fixed amount or percentage of what would have been the success fee. Specify the trigger (e.g. "after Phase 2 commences", "after exchange of confidential information").</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Logistics & Compliance -->
+            <div class="schedule-section">
+              <h4>Logistics &amp; Compliance</h4>
+              <p class="section-context">These fields protect both parties on risk, insurance, and governance. DistCap's own PI insurance may cover the consultant in some circumstances — the liability clause specifies the conditions. Request a Certificate of Currency from the consultant before work begins.</p>
+              <div class="form-grid">
+                <div class="form-group col-2">
+                  <label for="SCHEDULE_INSURANCE">Insurance Required</label>
+                  <input type="text" id="SCHEDULE_INSURANCE" name="SCHEDULE_INSURANCE" placeholder="e.g. Professional Indemnity $1M, Public Liability $5M">
+                  <small class="field-hint">Minimum standards depend on the nature of the work. Typical: Professional Indemnity $1–2M (advice/analysis), Public Liability $5–10M (on-site or client-facing work). The consultant must provide a current Certificate of Currency on request. Their liability is capped at the higher of: (a) their insurance limit, or (b) fees paid under this Schedule — whichever is greater.</small>
+                </div>
+
+                <div class="form-group col-2">
+                  <label>Conflict of Interest Declaration</label>
+                  <div class="conflict-toggle">
+                    <label><input type="radio" name="SCHEDULE_CONFLICT" value="is not" checked> Consultant is <strong>NOT</strong> aware of any conflicts</label>
+                    <label><input type="radio" name="SCHEDULE_CONFLICT" value="is"> Consultant <strong>IS</strong> aware of a conflict</label>
+                  </div>
+                  <small class="field-hint">The consultant must disclose any actual, potential, or perceived conflicts at the point of engagement — e.g. if they're also working for a competing bidder, an opposing party, or a related entity involved in the same transaction. A disclosed conflict does not automatically disqualify them; DistCap and the consultant agree a conflict management plan. Any new conflicts arising during the engagement must be disclosed immediately.</small>
+                </div>
+
+                <div class="form-group col-2" id="conflictDetailsGroup" style="display:none">
+                  <label for="SCHEDULE_CONFLICT_DETAILS">Conflict Details</label>
+                  <textarea id="SCHEDULE_CONFLICT_DETAILS" name="SCHEDULE_CONFLICT_DETAILS" rows="2" placeholder="Describe the known conflict(s) and any agreed management plan..."></textarea>
+                  <small class="field-hint warn">Conflicts must be described specifically. Vague disclosures ("possible conflict") are not adequate. If the conflict is material, consider whether to proceed with the engagement and document the management plan before signing.</small>
+                </div>
+
+                <div class="form-group">
+                  <label for="SCHEDULE_START_DATE">Project Start Date</label>
+                  <input type="text" id="SCHEDULE_START_DATE" name="SCHEDULE_START_DATE" placeholder="DD/MM/YYYY">
+                </div>
+                <div class="form-group">
+                  <label for="SCHEDULE_END_DATE">Estimated Project End Date</label>
+                  <input type="text" id="SCHEDULE_END_DATE" name="SCHEDULE_END_DATE" placeholder="e.g. 30/09/2026, 3 months, or on transaction close">
+                  <small class="field-hint">Estimated only — the main agreement continues until notice is given. This date is a planning reference, not a hard termination date.</small>
+                </div>
+                <div class="form-group col-2">
+                  <label for="SCHEDULE_ADDITIONAL">Additional Details</label>
+                  <textarea id="SCHEDULE_ADDITIONAL" name="SCHEDULE_ADDITIONAL" rows="2" placeholder="e.g. Consultant to attend weekly project calls. All deliverables to be submitted in editable Word format. — or leave blank"></textarea>
+                </div>
+              </div>
+
+              <div class="tab-context" style="margin-top: 16px; margin-bottom: 0;">
+                <strong>Reminder — non-solicitation:</strong> The Service Agreement contains a 2-year non-solicitation clause. After the agreement ends, the consultant cannot approach DistCap's clients (those for whom they directly provided services) without DistCap's written consent — for 2 years regardless of how the agreement ends. Exceptions apply where the consultant had an independent pre-existing relationship with that client, or where DistCap cannot provide the services requested. Make sure the consultant is aware of this before they sign.
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </section>
+    </main>
+
+    <!-- Action Bar — pinned to bottom, always visible -->
+    <div class="action-bar">
+      <div class="action-nav">
+        <button type="button" id="prevBtn" class="btn btn-secondary" disabled>← Previous</button>
+        <button type="button" id="nextBtn" class="btn btn-secondary">Next Step →</button>
+      </div>
+      <div class="action-generate">
+        <button type="button" id="generateBtn" class="btn btn-primary">Queue &amp; Send for Signature</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Modal -->
+  <div class="modal-overlay hidden" id="loadingModal">
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <h2>Queuing submission…</h2>
+      <p>Writing to SharePoint Queue. The watcher will pick this up within 15 seconds.</p>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div class="modal-overlay hidden" id="successModal">
+    <div class="modal-card success-card">
+      <div class="modal-header">
+        <span class="modal-icon success-icon" style="font-size:28px;color:#10b981">✓</span>
+        <h2>Queued &amp; Sending</h2>
+      </div>
+      <div class="modal-body">
+        <p>The document is being generated and will be sent to <strong id="signerEmailDisplay" style="color:#00538A;font-weight:600"></strong> via Dropbox Sign shortly.</p>
+        <p>The signed copy will automatically appear in the SharePoint <strong>Executed</strong> folder once the counterparty signs.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="closeSuccessBtn" class="btn btn-primary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Modal -->
+  <div class="modal-overlay hidden" id="errorModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-icon" style="font-size:22px">✕</span>
+        <h2>Submission Failed</h2>
+      </div>
+      <div class="modal-body">
+        <ul class="error-list" id="errorList"></ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="closeErrorBtn" class="btn btn-danger">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="nda_app.js"></script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline — Distillery Capital</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#003D5C;
+  --gold:#C8A84B;
+  --green:#1D6E40;
+  --amber:#B45309;
+  --red:#B91C1C;
+  --slate:#3D5166;
+  --bg:#EDF0F5;
+  --card:#FFFFFF;
+  --ink:#1C2333;
+  --muted:#64748B;
+  --rule:#CDD5E0;
+  --mono:'Cascadia Code','Consolas','Courier New',monospace;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:13px;line-height:1.5;display:flex;flex-direction:column}
+
+/* Header */
+.hdr{background:var(--navy);color:#fff;padding:12px 20px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hdr-title{font-size:15px;font-weight:700;letter-spacing:-0.01em}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:0.06em;text-transform:uppercase;margin-top:1px}
+.hdr-right{text-align:right}
+.hdr-ts{font-size:10px;color:rgba(255,255,255,0.5);font-family:var(--mono)}
+.hdr-hint{font-size:10px;color:rgba(255,255,255,0.3);margin-top:1px}
+.rbar-wrap{height:2px;background:rgba(255,255,255,0.12);margin-top:7px;overflow:hidden}
+.rbar{height:2px;background:var(--gold);width:100%;transition:width 0.9s linear}
+
+/* Columns */
+.cols{display:grid;grid-template-columns:22fr 39fr 39fr;flex:1;overflow:hidden;border-top:1px solid var(--rule)}
+.col{display:flex;flex-direction:column;border-right:1.5px solid var(--rule);overflow:hidden}
+.col:last-child{border-right:none}
+.col-hdr{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid var(--rule);background:var(--card);flex-shrink:0}
+.col-label{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
+.badge{font-size:10px;font-weight:700;padding:1px 8px;border-radius:10px;line-height:1.7}
+.b-blue {background:#DBEAFE;color:#1E40AF}
+.b-amber{background:#FEF3C7;color:var(--amber)}
+.b-green{background:#D1FAE5;color:var(--green)}
+.col-body{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+.col-body::-webkit-scrollbar{width:4px}
+.col-body::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
+
+/* Cards */
+.card{background:var(--card);border:1.5px solid var(--rule);padding:12px 13px}
+.card-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.doc-tag{font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:2px 6px;background:var(--bg);color:var(--slate);border:1px solid var(--rule)}
+.card-date{font-size:10px;color:var(--muted);font-family:var(--mono)}
+.party{font-size:14px;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:10px}
+
+/* Signers */
+.signers{border-top:1px solid var(--rule)}
+.signer{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--rule)}
+.signer:last-child{border-bottom:none}
+.s-icon{width:13px;text-align:center;font-size:11px;flex-shrink:0}
+.s-who{flex:1;font-size:11px;font-weight:500;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s-lbl{font-size:9px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;padding:1px 6px;flex-shrink:0}
+.sg .s-icon{color:var(--green)} .sg .s-lbl{background:#D1FAE5;color:var(--green)}
+.sw .s-icon{color:var(--amber)} .sw .s-lbl{background:#FEF3C7;color:var(--amber)}
+.sd .s-icon{color:var(--red)}   .sd .s-lbl{background:#FEE2E2;color:var(--red)}
+
+/* Nudge button */
+.nudge-btn{
+  font-size:9px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
+  padding:2px 7px;border:1.5px solid var(--amber);color:var(--amber);
+  background:transparent;cursor:pointer;flex-shrink:0;
+  transition:background 0.15s,color 0.15s;
+}
+.nudge-btn:hover{background:var(--amber);color:#fff}
+.nudge-btn:disabled{opacity:0.4;cursor:default}
+.nudge-btn.sending{opacity:0.6;cursor:default}
+
+/* Timeline */
+.timeline{margin-top:10px;padding-top:8px;border-top:1px solid var(--rule)}
+.tl-label{font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.tl-row{display:flex;align-items:flex-start;gap:8px;padding:3px 0;position:relative}
+.tl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.tl-sent .tl-dot{background:var(--navy)}
+.tl-nudge .tl-dot{background:var(--gold)}
+.tl-content{flex:1;min-width:0}
+.tl-event{font-size:10px;font-weight:600;color:var(--ink)}
+.tl-time{font-size:9px;color:var(--muted);font-family:var(--mono)}
+.tl-who{font-size:9px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-line{position:absolute;left:3px;top:11px;width:1px;height:calc(100% - 4px);background:var(--rule)}
+
+/* Banners */
+.banner{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;padding:5px 8px;margin-top:6px}
+.bn-green{background:#D1FAE5;color:var(--green)}
+.bn-amber{background:#FEF3C7;color:var(--amber)}
+.bn-red  {background:#FEE2E2;color:var(--red)}
+.bn-slate{background:#F1F5F9;color:var(--slate)}
+
+/* Empty */
+.empty{color:var(--muted);font-size:11px;text-align:center;padding:36px 12px;line-height:1.7}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;font-size:11px;font-weight:600;padding:8px 14px;opacity:0;transition:opacity 0.2s;pointer-events:none;z-index:99}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex;align-items:center;gap:20px">
+    <a href="/" style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);text-decoration:none;letter-spacing:0.04em;flex-shrink:0" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.6)'">← Dashboard</a>
+    <div>
+      <div class="hdr-title">Document Pipeline</div>
+      <div class="hdr-sub">Distillery Capital</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-ts" id="ts">—</div>
+    <div class="hdr-hint">Auto-refreshes every 15s</div>
+    <div class="rbar-wrap"><div class="rbar" id="rbar"></div></div>
+  </div>
+</div>
+
+<div class="cols">
+  <div class="col">
+    <div class="col-hdr">
+      <span class="col-label">Queue</span>
+      <span class="badge b-blue" id="n-queue">0</span>
+    </div>
+    <div class="col-body" id="col-queue"></div>
+  </div>
+  <div class="col">
+    <div class="col-hdr">
+      <span class="col-label">Pending Signature</span>
+      <span class="badge b-amber" id="n-pending">0</span>
+    </div>
+    <div class="col-body" id="col-pending"></div>
+  </div>
+  <div class="col">
+    <div class="col-hdr">
+      <span class="col-label">Executed</span>
+      <span class="badge b-green" id="n-executed">0</span>
+    </div>
+    <div class="col-body" id="col-executed"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const INTERVAL = 15000;
+let countdown = INTERVAL;
+let tick;
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+function fmtDate(iso){
+  if(!iso) return '—';
+  const [y,m,d] = iso.split('T')[0].split('-');
+  return `${+d} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]} ${y}`;
+}
+
+function fmtDateTime(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})
+    + ' ' + d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+}
+
+function fmtQueueTime(iso){
+  if(!iso) return '';
+  return (iso.split('T')[1]||'').slice(0,5);
+}
+
+function toast(msg, ok=true){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = ok ? '#1D6E40' : '#B91C1C';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2800);
+}
+
+async function nudge(btn, baseName, email, name){
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const r = await fetch('/api/pipeline-nudge',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ baseName, emailAddress: email, signerName: name })
+    });
+    const d = await r.json();
+    if(r.ok){ toast(`Nudge sent → ${email}`); refresh(); }
+    else { toast(d.details || d.error, false); btn.disabled=false; btn.textContent='Nudge'; }
+  } catch(e){ toast('Nudge failed — check server', false); btn.disabled=false; btn.textContent='Nudge'; }
+}
+
+function signerRow(s, baseName){
+  const isDC  = s.email && s.email.includes('distcap.com.au');
+  const who   = isDC ? 'Distillery Capital' : (s.name || s.email || '—');
+  const ok    = s.status === 'signed';
+  const bad   = s.status === 'declined';
+  const cls   = ok ? 'sg' : bad ? 'sd' : 'sw';
+  const icon  = ok ? '✓' : bad ? '✗' : '○';
+  const label = ok ? 'Signed' : bad ? 'Declined' : 'Awaiting';
+  const nudgeBtn = (!ok && !bad && baseName)
+    ? `<button class="nudge-btn" onclick="nudge(this,'${esc(baseName)}','${esc(s.email)}','${esc(s.name||'')}')">Nudge</button>`
+    : '';
+  return `<div class="signer ${cls}">
+    <span class="s-icon">${icon}</span>
+    <span class="s-who" title="${esc(s.email)}">${esc(who)}</span>
+    <span class="s-lbl">${label}</span>
+    ${nudgeBtn}
+  </div>`;
+}
+
+function renderTimeline(tl){
+  if(!tl || (!tl.sentAt && !tl.nudges?.length)) return '';
+  const rows = [];
+  const events = [];
+  if(tl.sentAt) events.push({ type:'sent', at: tl.sentAt });
+  (tl.nudges||[]).forEach(n => events.push({ type:'nudge', at: n.at, email: n.email, name: n.name }));
+
+  events.forEach((ev, i) => {
+    const hasNext = i < events.length - 1;
+    const lineEl  = hasNext ? `<div class="tl-line"></div>` : '';
+    if(ev.type === 'sent'){
+      rows.push(`<div class="tl-row tl-sent">
+        ${lineEl}<div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-event">Sent for signature</div>
+          <div class="tl-time">${fmtDateTime(ev.at)}</div>
+        </div>
+      </div>`);
+    } else {
+      const who = ev.name || ev.email || '';
+      rows.push(`<div class="tl-row tl-nudge">
+        ${lineEl}<div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-event">Nudge sent</div>
+          <div class="tl-time">${fmtDateTime(ev.at)}</div>
+          ${who ? `<div class="tl-who">${esc(who)}</div>` : ''}
+        </div>
+      </div>`);
+    }
+  });
+
+  return `<div class="timeline">
+    <div class="tl-label">History</div>
+    ${rows.join('')}
+  </div>`;
+}
+
+function renderQueue(items){
+  if(!items.length) return `<div class="empty">No items queued</div>`;
+  return items.map(it=>`
+    <div class="card">
+      <div class="card-meta"><span class="doc-tag">Queued</span><span class="card-date">${fmtQueueTime(it.queuedAt)}</span></div>
+      <div class="party">${esc(it.party||'—')}</div>
+      <div class="banner bn-slate">⏳ Processing…</div>
+    </div>`).join('');
+}
+
+function renderPending(items){
+  if(!items.length) return `<div class="empty">No documents pending<br>signature</div>`;
+  return items.map(it=>{
+    const base = (it.filename||'').replace(/\.docx$/i,'');
+    let body;
+    if(!it.sent){
+      body = `<div class="banner bn-red">✗ Not sent — check Dropbox Sign config</div>`;
+    } else if(it.signers && it.signers.length){
+      body = `<div class="signers">${it.signers.map(s=>signerRow(s, base)).join('')}</div>`;
+    } else {
+      body = `<div class="banner bn-amber">⏳ Fetching status…</div>`;
+    }
+    return `<div class="card">
+      <div class="card-meta"><span class="doc-tag">${esc(it.docType)}</span><span class="card-date">${fmtDate(it.date)}</span></div>
+      <div class="party">${esc(it.party)}</div>
+      ${body}
+      ${renderTimeline(it.timeline)}
+    </div>`;
+  }).join('');
+}
+
+function renderExecuted(items){
+  if(!items.length) return `<div class="empty">No executed documents yet</div>`;
+  return items.map(it=>`
+    <div class="card">
+      <div class="card-meta"><span class="doc-tag">${esc(it.docType)}</span><span class="card-date">${fmtDate(it.date)}</span></div>
+      <div class="party">${esc(it.party)}</div>
+      ${it.hasPDF ? `<div class="banner bn-green">✓ Signed PDF filed</div>` : `<div class="banner bn-amber">⏳ Awaiting signed PDF</div>`}
+      ${renderTimeline(it.timeline)}
+    </div>`).join('');
+}
+
+async function refresh(){
+  try {
+    const r    = await fetch('/api/pipeline-status');
+    const data = await r.json();
+
+    document.getElementById('col-queue').innerHTML    = renderQueue(data.queued);
+    document.getElementById('col-pending').innerHTML  = renderPending(data.pending);
+    document.getElementById('col-executed').innerHTML = renderExecuted(data.executed);
+    document.getElementById('n-queue').textContent    = data.queued.length;
+    document.getElementById('n-pending').textContent  = data.pending.length;
+    document.getElementById('n-executed').textContent = data.executed.length;
+
+    const t = new Date(data.lastUpdated);
+    document.getElementById('ts').textContent =
+      'Updated ' + t.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+    countdown = INTERVAL;
+    runBar();
+  } catch(e){
+    document.getElementById('ts').textContent = 'Error — retrying…';
+  }
+}
+
+function runBar(){
+  clearInterval(tick);
+  const bar = document.getElementById('rbar');
+  tick = setInterval(()=>{
+    countdown -= 100;
+    bar.style.width = Math.max(0, (countdown/INTERVAL)*100) + '%';
+    if(countdown <= 0){ clearInterval(tick); refresh(); }
+  }, 100);
+}
+
+refresh();
+</script>
+</body>
+</html>

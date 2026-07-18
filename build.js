@@ -17,6 +17,14 @@ const pcycCoverImg = fs.existsSync(path.join(__dirname, "pcyc_cover.png"))
   ? fs.readFileSync(path.join(__dirname, "pcyc_cover.png"))
   : coverImg;
 
+const philProfileImg = fs.existsSync(path.join(__dirname, "phil_profile.jpg"))
+  ? fs.readFileSync(path.join(__dirname, "phil_profile.jpg"))
+  : null;
+const teamChartImg = fs.existsSync(path.join(__dirname, "team_chart.png"))
+  ? fs.readFileSync(path.join(__dirname, "team_chart.png"))
+  : null;
+
+
 
 // ---------- helpers ----------
 const t = (text, opts = {}) => new TextRun({ text, font: "Arial", ...opts });
@@ -211,6 +219,6 @@ const getContents = (answers, isTemplate = true) => {
 
 module.exports = {
   fs, path, Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun, Header, Footer, AlignmentType, LevelFormat, TableOfContents, HeadingLevel, BorderStyle, WidthType, ShadingType, VerticalAlign, PageNumber, PageBreak, TabStopType, TabStopPosition, SectionType,
-  NAVY, YELLOW, GREY, logo, coverImg, t, ph, body, bodyL, bullet, h1, h2, h3, guidance, pageHeader,
+  NAVY, YELLOW, GREY, logo, coverImg, philProfileImg, teamChartImg, t, ph, body, bodyL, bullet, h1, h2, h3, guidance, pageHeader,
   filterEmpty, val, getPageFooter, getCover, getLetter, getContents
 };

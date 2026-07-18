@@ -1,9 +1,10 @@
 const M = require("./build.js");
 const {
-  fs, path, Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+  fs, path, Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
   AlignmentType, LevelFormat, HeadingLevel, BorderStyle, WidthType, ShadingType,
   PageBreak, SectionType, t, ph, body, bodyL, bullet, h1, h2, h3, guidance,
-  pageHeader, filterEmpty, val, getPageFooter, getCover, getLetter, getContents, NAVY
+  pageHeader, filterEmpty, val, getPageFooter, getCover, getLetter, getContents, NAVY,
+  philProfileImg, teamChartImg
 } = M;
 
 // ---------- Section 1 ----------
@@ -29,7 +30,7 @@ const getSec2 = (answers, isTemplate = true) => {
   const clientObligationsOther = (answers && answers.CLIENT_OBLIGATION_OTHER) || [];
   
   let deliverablesBullets = [];
-  if (!isTemplate && deliverables.length > 0) {
+  if (deliverables.length > 0) {
     const highlight = (answers && (answers.highlight_filled === true || answers.highlight_filled === "true")) ? "green" : undefined;
     deliverablesBullets = deliverables.map(d => bullet([t(d, { highlight })]));
   } else {
@@ -42,7 +43,7 @@ const getSec2 = (answers, isTemplate = true) => {
   }
   
   let otherObligations = [];
-  if (!isTemplate && clientObligationsOther.length > 0) {
+  if (clientObligationsOther.length > 0) {
     const highlight = (answers && (answers.highlight_filled === true || answers.highlight_filled === "true")) ? "green" : undefined;
     otherObligations = clientObligationsOther.map(o => bullet([t(o, { highlight })]));
   } else {
@@ -94,6 +95,13 @@ const getSec4 = (answers, isTemplate = true) => filterEmpty([
   body([t("We provide an indicative Team Chart at Figure 1, below:")]),
   bodyL([t("Figure 1: Team Chart", { bold: true })]),
   guidance("Insert the team chart graphic here (client logo \u2192 DistCap logo \u2192 Engagement Lead \u2192 supporting advisors/analyst). Reuse the SmartArt/PowerPoint object from the NI proposal and update names.", isTemplate),
+  teamChartImg
+    ? new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 120, after: 240 },
+        children: [new ImageRun({ type: "png", data: teamChartImg, transformation: { width: 550, height: 300 } })]
+      })
+    : null,
   body([
     t("Should additional support or third-party consultants be required as the Engagement progresses, we can assist you in the appointment and management of third-party consultants where appropriate.")
   ]),
@@ -164,6 +172,8 @@ const getSec6 = (answers, isTemplate = true) => filterEmpty([
   body([t("Whilst the information contained in this Proposal has been prepared in good faith, we cannot guarantee the suitability or fitness of any Services for your purposes and cannot guarantee any outcomes, forecasts or results will be achieved.")]),
   h2("6.3. Provisions relating to the provision of Services"),
   body([t("If our scope of work includes assistance in relation to the preparation or analysis of any prospective financial information, or the making of forecasts or projections, nothing we say will constitute a representation, statement or warranty as to whether any such forecasts or projections will be achieved, or whether the assumptions and data underlying any such prospective financial information are accurate, complete or reasonable. We do not warrant or guarantee the achievement of any such forecasts or projections. There will usually be differences between forecast or projected results and actual results because events and circumstances frequently do not occur as expected or predicted, and those differences may be material.")]),
+  body([t("If the Services relate to the provision of advice in relation to a transaction process for the Client, in connection with the Project, the Client will bear the ultimate responsibility for the content, terms, quality and success or otherwise of that process. Other than in relation to the provision of the Services, Distillery Capital is not responsible for the content, terms, quality or success or otherwise of the documentation.")]),
+  body([t("In providing advice and support to you in connection with your negotiations (including at meetings and in discussions or correspondence relating to negotiations), we shall not act (and we shall be entitled to make clear to third parties, including through any press releases and any public or other documentation, that we are not acting) as principal nor are we authorised to bind you to a transaction, thus acknowledging that you retain sole responsibility for the management, conduct and operation of your business and the Project.")]),
   h2("6.4. Confidentiality"),
   body([t("In accordance with our usual practice, this Proposal and any Services shall only be used by the party to whom it is addressed and only for the purpose to which it refers. The Services or any part thereof shall not be distributed to any third party, or published in any publication, document, circular or memo or in any form, without prior written consent from Distillery Capital.")]),
   h2("6.5. Conflicts of interest"),
@@ -400,10 +410,54 @@ const cvTable = new Table({
   ]
 });
 
+const cvHeaderTable = new Table({
+  width: { size: 9639, type: WidthType.DXA },
+  columnWidths: [1800, 7839],
+  borders: {
+    top: { style: BorderStyle.NONE },
+    bottom: { style: BorderStyle.NONE },
+    left: { style: BorderStyle.NONE },
+    right: { style: BorderStyle.NONE },
+    insideHorizontal: { style: BorderStyle.NONE },
+    insideVertical: { style: BorderStyle.NONE }
+  },
+  rows: [
+    new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 1800, type: WidthType.DXA },
+          margins: { top: 100, bottom: 100, left: 60, right: 60 },
+          children: [
+            new Paragraph({
+              children: philProfileImg
+                ? [new ImageRun({ type: "jpg", data: philProfileImg, transformation: { width: 100, height: 100 } })]
+                : []
+            })
+          ]
+        }),
+        new TableCell({
+          width: { size: 7839, type: WidthType.DXA },
+          margins: { top: 200, bottom: 100, left: 120, right: 60 },
+          children: [
+            new Paragraph({
+              spacing: { after: 60 },
+              children: [new TextRun({ text: "Phillip Ransom", font: "Arial", bold: true, size: 40, color: "000000" })]
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: "Managing Director", font: "Arial", bold: true, size: 24, color: "595959" })]
+            })
+          ]
+        })
+      ]
+    })
+  ]
+});
+
 const getAppendix1 = (answers, isTemplate = true) => filterEmpty([
   h1("Appendix 1 \u2013 Curriculum Vitae"),
   guidance("Insert the standard two-column CV page(s) for each team member named in Section 4. Keep the master CV pages in a separate \u2018CV library\u2019 file and paste the relevant ones in \u2014 do not retype. For each proposal, reorder the \u2018Selected Project Experience\u2019 bullets so the most relevant sector/transaction type appears first.", isTemplate),
   body([t("Selected profiles for the proposed Engagement team members are presented below:")]),
+  cvHeaderTable,
   cvTable
 ]);
 

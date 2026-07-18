@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://files-e6oal1jps-ryan-gpa-s-projects.vercel.app",
+      "url": "https://distcap-agreements.vercel.app",
       "description": "Production (Vercel)"
     },
     {
