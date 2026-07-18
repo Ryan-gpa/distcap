@@ -5,3 +5,12 @@ drafts/
 .env.local
 
 .vercel
+.env*
+
+# Secrets / credentials — never commit
+*.pem
+*.key
+*.p12
+*.pfx
+docusign_private.pem
+downloads/
