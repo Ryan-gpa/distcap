@@ -7,6 +7,7 @@ const {
   GetPromptRequestSchema
 } = require("@modelcontextprotocol/sdk/types.js");
 const { buildNDADocument } = require('./build_nda.js');
+const { sendEnvelope, getEnvelopeStatus } = require('./docusign_sender.js');
 const { Packer } = require('docx');
 const fs = require('fs');
 const path = require('path');
@@ -90,6 +91,10 @@ server.setRequestHandler(ListPromptsRequestSchema, async () => {
         description: "How to use the Distillery Capital document generator — what it does and where documents are saved",
       },
       {
+        name: "distcap-docusign-setup",
+        description: "One-time steps to connect DocuSign so documents can be sent for signature",
+      },
+      {
         name: "draft-nda",
         description: "Start a guided, conversational flow to draft a new NDA",
       }
@@ -119,6 +124,29 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
 - Signing: after a document is generated it can be sent for signature — ask me about that as a separate step.
 
 Present it as a brief guide, and make sure I come away knowing exactly where my documents will be saved.`
+          }
+        }
+      ]
+    };
+  }
+  if (request.params.name === "distcap-docusign-setup") {
+    return {
+      description: "DocuSign one-time setup",
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+`Walk me through connecting DocuSign so the distcap_send_for_signature tool can send documents. Present these as clear numbered steps:
+
+1. In DocuSign, go to Settings → Apps and Keys. Create (or open) an app and copy its Integration Key — this is DS_INTEGRATION_KEY.
+2. On that same page under "My Account Information", copy the User ID (API Username) — this is DS_USER_GUID — and the API Account ID — this is DS_ACCOUNT_ID.
+3. Make sure the app has an RSA keypair whose private key matches the docusign_private.pem file in this project. (If not, add the public key to the app, or regenerate the keypair and replace the .pem.) Also add a redirect URI such as https://www.docusign.com to the app.
+4. Set these in the connector's environment configuration and restart it: DS_INTEGRATION_KEY, DS_USER_GUID, DS_ACCOUNT_ID, and DS_ENV=demo (use demo for testing; prod for real signatures, which requires DocuSign "Go-Live" promotion of the integration key).
+5. Grant one-time consent: the first time the tool runs it will return a consent URL. Open it in a browser, log in as the DocuSign account admin, and click Accept. After that, sending works.
+
+Explain that testing should be done in the demo environment first (DS_ENV=demo), and that moving to real/binding signatures needs DS_ENV=prod plus DocuSign's Go-Live review.`
           }
         }
       ]
@@ -189,9 +217,61 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "string",
               description: "What is the client's registered address?"
             },
-            COUNTERPARTY_EMAIL: { 
+            COUNTERPARTY_EMAIL: {
               type: "string",
               description: "What is the client's email address for notices?"
+            }
+          }
+        },
+      },
+      {
+        name: "distcap_send_for_signature",
+        description: "Sends an already-generated Distillery Capital document to DocuSign for signature. Takes the docx_path returned by distcap_generate_nda, plus the two signers. Creates a DRAFT envelope by default (set send_now=true to send immediately). Signature and printed-name fields are placed automatically. The counterparty signs first, then Distillery Capital.",
+        inputSchema: {
+          type: "object",
+          required: ["docx_path", "COUNTERPARTY_SIGNER_NAME", "COUNTERPARTY_SIGNER_EMAIL"],
+          properties: {
+            docx_path: {
+              type: "string",
+              description: "Absolute path to the generated .docx (the 'Saved to:' path from distcap_generate_nda)."
+            },
+            COUNTERPARTY_SIGNER_NAME: {
+              type: "string",
+              description: "Full name of the person at the counterparty who will sign (signs first)."
+            },
+            COUNTERPARTY_SIGNER_EMAIL: {
+              type: "string",
+              description: "Email of the counterparty signer."
+            },
+            DISTCAP_SIGNER_NAME: {
+              type: "string",
+              description: "Name of the Distillery Capital signer. Defaults to 'Phillip Ransom'."
+            },
+            DISTCAP_SIGNER_EMAIL: {
+              type: "string",
+              description: "Email of the Distillery Capital signer. Defaults to 'phil.ransom@distcap.com.au'."
+            },
+            send_now: {
+              type: "boolean",
+              description: "If true, sends the envelope immediately. If false (default), creates a draft for review before sending."
+            },
+            email_subject: {
+              type: "string",
+              description: "Optional subject line for the signature request email."
+            }
+          }
+        },
+      },
+      {
+        name: "distcap_signature_status",
+        description: "Checks the signing status of a DocuSign envelope created by distcap_send_for_signature. Returns each signer's status (sent / delivered / completed) and when they signed. Use this to track outstanding signatures.",
+        inputSchema: {
+          type: "object",
+          required: ["envelope_id"],
+          properties: {
+            envelope_id: {
+              type: "string",
+              description: "The DocuSign envelope ID returned by distcap_send_for_signature."
             }
           }
         },
@@ -285,6 +365,63 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{ type: "text", text: `Error generating document: ${err.message}` }],
           isError: true
         };
+      }
+    }
+
+    case "distcap_send_for_signature": {
+      const a = request.params.arguments || {};
+      try {
+        if (!a.docx_path || !fs.existsSync(a.docx_path)) {
+          return {
+            content: [{ type: "text", text: `Document not found at docx_path: ${a.docx_path || '(none provided)'}. Generate the document first with distcap_generate_nda, then pass its 'Saved to:' path here.` }],
+            isError: true
+          };
+        }
+        if (!a.COUNTERPARTY_SIGNER_NAME || !a.COUNTERPARTY_SIGNER_EMAIL) {
+          return {
+            content: [{ type: "text", text: `Please ask the user for the counterparty signer's full name and email (the person who will actually sign).` }],
+            isError: true
+          };
+        }
+
+        const docxBuffer = fs.readFileSync(a.docx_path);
+        const docName = path.basename(a.docx_path);
+        const signers = [
+          { name: a.COUNTERPARTY_SIGNER_NAME, email: a.COUNTERPARTY_SIGNER_EMAIL, role: 'signer0', routingOrder: 1 },
+          { name: a.DISTCAP_SIGNER_NAME || 'Phillip Ransom', email: a.DISTCAP_SIGNER_EMAIL || 'phil.ransom@distcap.com.au', role: 'signer1', routingOrder: 2 },
+        ];
+
+        const result = await sendEnvelope({
+          docxBuffer,
+          docName,
+          emailSubject: a.email_subject,
+          signers,
+          send: a.send_now === true,
+        });
+
+        const mode = a.send_now === true ? 'SENT to signers' : 'created as a DRAFT (review in DocuSign, then send)';
+        return {
+          content: [{ type: "text", text: `DocuSign envelope ${mode}.\nEnvelope ID: ${result.envelopeId}\nStatus: ${result.status}\nSigners: ${signers.map(s => `${s.name} <${s.email}>`).join(' then ')}` }]
+        };
+      } catch (err) {
+        return {
+          content: [{ type: "text", text: `DocuSign send failed: ${err.message}` }],
+          isError: true
+        };
+      }
+    }
+
+    case "distcap_signature_status": {
+      const a = request.params.arguments || {};
+      try {
+        if (!a.envelope_id) {
+          return { content: [{ type: "text", text: `Please provide the envelope_id returned when the document was sent.` }], isError: true };
+        }
+        const status = await getEnvelopeStatus(a.envelope_id);
+        const lines = status.signers.map(s => `- ${s.name} <${s.email}>: ${s.status}${s.signedAt ? ` (signed ${s.signedAt})` : ''}`).join('\n');
+        return { content: [{ type: "text", text: `Envelope ${a.envelope_id} status:\n${lines || '(no signers found)'}` }] };
+      } catch (err) {
+        return { content: [{ type: "text", text: `DocuSign status check failed: ${err.message}` }], isError: true };
       }
     }
 
