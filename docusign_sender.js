@@ -47,10 +47,21 @@ function missingConfig(c) {
   return miss;
 }
 
-// Return the RSA private key PEM — from env (unescaping literal \n) or the file.
+// Return the RSA private key PEM. Robust to however the key was stored: real
+// newlines, literal "\n", or newlines flattened to spaces/nothing (common when a
+// PEM is pasted into a cloud app-setting field). We rebuild a correctly-wrapped PEM
+// from the base64 body, so any of those inputs works.
 function getPrivateKey(c) {
-  if (c.privateKey && c.privateKey.trim()) return c.privateKey.replace(/\\n/g, '\n');
-  return fs.readFileSync(c.keyPath, 'utf8');
+  let k = (c.privateKey && c.privateKey.trim()) ? c.privateKey : fs.readFileSync(c.keyPath, 'utf8');
+  k = k.replace(/\\r/g, '').replace(/\\n/g, '\n').replace(/\r/g, '');
+  const m = k.match(/-----BEGIN ([A-Z0-9 ]+?)-----([\s\S]*?)-----END \1-----/);
+  if (m) {
+    const label = m[1].trim();
+    const body = m[2].replace(/[^A-Za-z0-9+/=]/g, ''); // keep only base64 chars
+    const wrapped = (body.match(/.{1,64}/g) || []).join('\n');
+    k = `-----BEGIN ${label}-----\n${wrapped}\n-----END ${label}-----\n`;
+  }
+  return k;
 }
 
 function base64url(input) {
