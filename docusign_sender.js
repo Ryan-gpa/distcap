@@ -28,6 +28,9 @@ function cfg() {
     integrationKey: process.env.DS_INTEGRATION_KEY,
     userGuid: process.env.DS_USER_GUID,
     accountId: process.env.DS_ACCOUNT_ID,
+    // Private key: prefer DS_PRIVATE_KEY (full PEM content, e.g. an Azure app setting /
+    // Key Vault) so we never ship the .pem file; fall back to a local file for dev.
+    privateKey: process.env.DS_PRIVATE_KEY,
     keyPath: process.env.DS_PRIVATE_KEY_PATH || path.join(__dirname, 'docusign_private.pem'),
     oauthBase: env === 'prod' ? 'https://account.docusign.com' : 'https://account-d.docusign.com',
     aud: env === 'prod' ? 'account.docusign.com' : 'account-d.docusign.com',
@@ -40,8 +43,14 @@ function missingConfig(c) {
   if (!c.integrationKey) miss.push('DS_INTEGRATION_KEY');
   if (!c.userGuid) miss.push('DS_USER_GUID');
   if (!c.accountId) miss.push('DS_ACCOUNT_ID');
-  if (!fs.existsSync(c.keyPath)) miss.push(`private key at ${c.keyPath}`);
+  if (!c.privateKey && !fs.existsSync(c.keyPath)) miss.push('DS_PRIVATE_KEY (or a local .pem)');
   return miss;
+}
+
+// Return the RSA private key PEM — from env (unescaping literal \n) or the file.
+function getPrivateKey(c) {
+  if (c.privateKey && c.privateKey.trim()) return c.privateKey.replace(/\\n/g, '\n');
+  return fs.readFileSync(c.keyPath, 'utf8');
 }
 
 function base64url(input) {
@@ -62,7 +71,7 @@ function buildAssertion(c) {
     scope: 'signature impersonation',
   };
   const signingInput = `${base64url(JSON.stringify(header))}.${base64url(JSON.stringify(payload))}`;
-  const key = fs.readFileSync(c.keyPath, 'utf8');
+  const key = getPrivateKey(c);
   const signature = crypto.createSign('RSA-SHA256').update(signingInput).sign(key);
   const sigB64 = signature.toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
   return `${signingInput}.${sigB64}`;
