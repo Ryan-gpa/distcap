@@ -98,6 +98,10 @@ server.setRequestHandler(ListPromptsRequestSchema, async () => {
       {
         name: "draft-nda",
         description: "Start a guided, conversational flow to draft a new NDA",
+      },
+      {
+        name: "draft-service-agreement",
+        description: "Start a guided flow to draft a Distillery Capital Service Agreement (engaging a consultant)",
       }
     ]
   };
@@ -167,6 +171,20 @@ Explain that testing should be done in the demo environment first (DS_ENV=demo),
       ]
     };
   }
+  if (request.params.name === "draft-service-agreement") {
+    return {
+      description: "Guided Service Agreement generation",
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: "Draft a Distillery Capital Service Agreement by calling the distcap_generate_service_agreement tool. In this agreement Distillery Capital is the CLIENT engaging a consultant; Distillery Capital signs as Phillip Ransom automatically — do not ask about the Distillery Capital side. Do not write the agreement text yourself or use another document skill; the tool and template handle all clauses, liability, IP, governing law and the Schedule 1 structure. Ask me for: the Consultancy's full legal entity name, ABN, registered address, notice email, and the name of the person who will sign for the Consultancy; the engagement commencement date; and the Schedule 1 details — project/engagement name, a short description of the services, the fee basis (any of fixed fee / monthly retainer / success fee / abortive fee), insurance required, and start and estimated end dates. Anything I don't provide, leave as a template placeholder. Once you have the details, call the tool."
+          }
+        }
+      ]
+    };
+  }
   throw new Error(`Unknown prompt: ${request.params.name}`);
 });
 
@@ -226,6 +244,36 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "string",
               description: "Full name of the person at the counterparty who will sign. Printed on their signature block. Optional — leave blank if unknown."
             }
+          }
+        },
+      },
+      {
+        name: "distcap_generate_service_agreement",
+        description: "Generates a Distillery Capital Service Agreement (.docx) for engaging a consultant. Distillery Capital is the Client (signs as Phillip Ransom); the Consultancy is the other party. All clauses, liability, IP, governing law and the Schedule 1 structure are handled by the template — provide the consultancy details and Schedule 1 fields; anything omitted is left as a placeholder.",
+        inputSchema: {
+          type: "object",
+          required: ["CONSULTANCY_LEGAL_ENTITY", "CONSULTANCY_ABN", "CONSULTANCY_ADDRESS", "CONSULTANCY_EMAIL"],
+          properties: {
+            CONSULTANCY_LEGAL_ENTITY: { type: "string", description: "The consultancy's full registered legal entity name." },
+            CONSULTANCY_ABN: { type: "string", description: "The consultancy's 11-digit ABN (validated)." },
+            CONSULTANCY_ADDRESS: { type: "string", description: "The consultancy's registered address." },
+            CONSULTANCY_EMAIL: { type: "string", description: "The consultancy's email address for notices." },
+            CONSULTANCY_SIGNER_NAME: { type: "string", description: "Name of the person who will sign for the consultancy (printed on their signature block)." },
+            COMMENCEMENT_DATE: { type: "string", description: "Engagement commencement date, e.g. '1 August 2026'." },
+            SCHEDULE_PROJECT: { type: "string", description: "Schedule 1: project / engagement name." },
+            SCHEDULE_PROPERTY: { type: "string", description: "Schedule 1: property address(es), or N/A." },
+            SCHEDULE_SERVICES: { type: "string", description: "Schedule 1: description of the services to be performed." },
+            SCHEDULE_OTHER_USERS: { type: "string", description: "Schedule 1: any other intended users of the services, or N/A." },
+            SCHEDULE_FEE_FIXED: { type: "string", description: "Schedule 1: fixed fee element, or N/A." },
+            SCHEDULE_FEE_RETAINER: { type: "string", description: "Schedule 1: monthly retainer, or N/A." },
+            SCHEDULE_FEE_SUCCESS: { type: "string", description: "Schedule 1: success fee, or N/A." },
+            SCHEDULE_FEE_ABORTIVE: { type: "string", description: "Schedule 1: abortive fees, or N/A." },
+            SCHEDULE_INSURANCE: { type: "string", description: "Schedule 1: insurance required (e.g. Professional Indemnity, Public Liability)." },
+            SCHEDULE_CONFLICT: { type: "string", description: "Whether the consultancy is aware of a conflict of interest.", enum: ["is not", "is"] },
+            SCHEDULE_CONFLICT_DETAILS: { type: "string", description: "Details of any conflict of interest (only if SCHEDULE_CONFLICT is 'is')." },
+            SCHEDULE_START_DATE: { type: "string", description: "Schedule 1: project start date." },
+            SCHEDULE_END_DATE: { type: "string", description: "Schedule 1: estimated project end date or milestone." },
+            SCHEDULE_ADDITIONAL: { type: "string", description: "Schedule 1: any additional details, or N/A." }
           }
         },
       },
@@ -362,6 +410,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{ type: "text", text: `Error generating document: ${err.message}` }],
           isError: true
         };
+      }
+    }
+
+    case "distcap_generate_service_agreement": {
+      const payload = request.params.arguments || {};
+      payload.doc_type = 'service_agreement';
+
+      if (payload.CONSULTANCY_ABN) {
+        const abnCheck = validateABN(payload.CONSULTANCY_ABN);
+        if (!abnCheck.valid) {
+          return { content: [{ type: "text", text: `Invalid consultancy ABN: ${abnCheck.error}\nPlease ask the user for a valid 11-digit ABN.` }], isError: true };
+        }
+        payload.CONSULTANCY_ABN = abnCheck.cleanABN;
+      }
+
+      try {
+        payload.DATE_ISSUE = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        const doc = buildNDADocument(payload);
+        const buf = await Packer.toBuffer(doc);
+        const party = (payload.CONSULTANCY_LEGAL_ENTITY || 'Consultancy').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
+        const outputDir = getOutputDir();
+        const outPath = path.join(outputDir, `DistCap_ServiceAgreement_${party}_${Date.now()}.docx`);
+        fs.writeFileSync(outPath, buf);
+        const locationNote = isOutputDirConfigured()
+          ? `Saved to your configured output folder.`
+          : `Saved to the default output folder (Documents\\Distillery Capital).`;
+        return { content: [{ type: "text", text: `Service Agreement generated.\nSaved to: ${outPath}\n\n${locationNote}\n\n[NEXT STEP]: To send for signature, use distcap_send_for_signature with this docx_path — pass the CONSULTANCY signer as the counterparty signer (they sign first); Phillip Ransom counter-signs for Distillery Capital automatically.` }] };
+      } catch (err) {
+        return { content: [{ type: "text", text: `Error generating service agreement: ${err.message}` }], isError: true };
       }
     }
 

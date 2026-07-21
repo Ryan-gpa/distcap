@@ -338,7 +338,7 @@ function consultancyExecution(answers) {
       width: { size: HALF_WIDTH, type: WidthType.DXA },
       borders: tableBorders,
       rows: [new TableRow({
-        children: [sigCell('Signature of sole director', 'Name of sole director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]')]
+        children: [sigCell('Signature of sole director', 'Name of sole director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]', (answers && answers.CONSULTANCY_SIGNER_NAME) || null)]
       })]
     }),
     blank(200)
