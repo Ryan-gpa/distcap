@@ -101,17 +101,15 @@ async function getBaseUri(c, token) {
 }
 
 // Anchor tabs for a signer, keyed to the tags embedded in the DOCX.
+// Only the signature field is placed by DocuSign — the signer's printed NAME is baked
+// into the document by build_nda.js (Phil always; counterparty from the intake).
+// The signHere anchor sits in the blank signing space just above the signature line.
 function tabsForRole(role) {
   return {
     signHereTabs: [{
       anchorString: `[sig|req|${role}]`,
-      anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '-6',
+      anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '10',
       anchorIgnoreIfNotPresent: 'false', anchorCaseSensitive: 'false',
-    }],
-    fullNameTabs: [{
-      anchorString: `[text|req|${role}]`,
-      anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '-6',
-      anchorIgnoreIfNotPresent: 'true', anchorCaseSensitive: 'false',
     }],
   };
 }

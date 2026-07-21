@@ -131,7 +131,11 @@ const cellBorders = { top: NB, bottom: NB, left: NB, right: NB };
 // Optional note (italics) displayed below the top label.
 // sigTag / nameTag: Dropbox Sign text tags embedded as 1pt white text so they are
 // invisible to readers but detected by Dropbox Sign (hide_text_tags: true removes them).
-function sigCell(topLabel, bottomLabel, note, widthSize = 50, widthType = WidthType.PERCENTAGE, sigTag = null, nameTag = null) {
+// sigTag: invisible white anchor where DocuSign places the signature field.
+// printedName: the signer's name, printed just above the name line (Phil is always
+// filled; the counterparty signer's name comes from the intake). No DocuSign name tab —
+// the name is baked into the document.
+function sigCell(topLabel, bottomLabel, note, widthSize = 50, widthType = WidthType.PERCENTAGE, sigTag = null, nameTag = null, printedName = null) {
   const tagRun = (tag) => new TextRun({ text: tag, font: 'Arial', size: 4, color: 'FFFFFF' });
 
   const children = [
@@ -152,9 +156,10 @@ function sigCell(topLabel, bottomLabel, note, widthSize = 50, widthType = WidthT
     }));
   }
   children.push(
+    new Paragraph({ spacing: { before: 0, after: 520 }, children: [] }),
     new Paragraph({
-      spacing: { before: 0, after: 900 },
-      children: nameTag ? [tagRun(nameTag)] : [],
+      spacing: { before: 0, after: 20 },
+      children: printedName ? [r(printedName, { size: 20 })] : [],
     }),
     new Paragraph({
       spacing: { before: 0, after: 120 },
@@ -185,7 +190,7 @@ function distcapExecution() {
       borders: tableBorders,
       rows: [new TableRow({
         children: [
-          sigCell('Signature of director', 'Name of director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer1]', '[text|req|signer1]'),
+          sigCell('Signature of director', 'Name of director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer1]', '[text|req|signer1]', 'Phillip Ransom'),
           sigCell('Signature of director/company secretary', 'Name of director/company secretary (print)', '(Please delete as applicable)', HALF_WIDTH, WidthType.DXA)
         ]
       })]
@@ -209,7 +214,8 @@ function counterpartyExecution(answers) {
   const name = answers && answers.COUNTERPARTY_LEGAL_ENTITY ? answers.COUNTERPARTY_LEGAL_ENTITY : '[COUNTERPARTY LEGAL ENTITY NAME]';
   const abnStr = answers && answers.COUNTERPARTY_ABN ? ' ABN ' + getFormattedABN(answers.COUNTERPARTY_ABN) : '';
   const fullName = name + abnStr;
-  
+  const signerName = (answers && answers.COUNTERPARTY_SIGNER_NAME) || null;
+
   let recital = '';
   let rows = [];
   let reviewerNote = null;
@@ -218,7 +224,7 @@ function counterpartyExecution(answers) {
     case 'company_sole_director':
       recital = `Executed by ${fullName} in accordance with section 127(1) of the Corporations Act 2001 (Cth) by its sole director`;
       rows = [new TableRow({
-        children: [sigCell('Signature of sole director', 'Name of sole director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]')]
+        children: [sigCell('Signature of sole director', 'Name of sole director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]', signerName)]
       })];
       break;
 
@@ -226,7 +232,7 @@ function counterpartyExecution(answers) {
       recital = `Executed by ${fullName} in accordance with section 127(1) of the Corporations Act 2001 (Cth)`;
       rows = [new TableRow({
         children: [
-          sigCell('Signature of director', 'Name of director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]'),
+          sigCell('Signature of director', 'Name of director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]', signerName),
           sigCell('Signature of director/company secretary', 'Name of director/company secretary (print)', '(Please delete as applicable)', HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]')
         ]
       })];
@@ -237,7 +243,7 @@ function counterpartyExecution(answers) {
       recital = `Executed by ${fullName} as trustee for ${trust} in accordance with section 127(1) of the Corporations Act 2001 (Cth)`;
       rows = [new TableRow({
         children: [
-          sigCell('Signature of director', 'Name of director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]'),
+          sigCell('Signature of director', 'Name of director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]', signerName),
           sigCell('Signature of director/company secretary', 'Name of director/company secretary (print)', '(Please delete as applicable)', HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]')
         ]
       })];
@@ -249,7 +255,7 @@ function counterpartyExecution(answers) {
       recital = `Signed by ${name}${tradingAs}`;
       rows = [new TableRow({
         children: [
-          sigCell('Signature of individual', 'Name of individual (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]'),
+          sigCell('Signature of individual', 'Name of individual (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]', signerName),
           sigCell('Signature of witness', 'Name of witness (print)', 'Witness must be present when signed', HALF_WIDTH, WidthType.DXA, '[sig|req|witness0]', '[text|req|witness0]')
         ]
       })];
@@ -260,7 +266,7 @@ function counterpartyExecution(answers) {
       recital = `Signed for and on behalf of ${name} by [PARTNER NAME], a partner duly authorised`;
       rows = [new TableRow({
         children: [
-          sigCell('Signature of partner', 'Name of partner (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]'),
+          sigCell('Signature of partner', 'Name of partner (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]', signerName),
           sigCell('Signature of witness', 'Name of witness (print)', 'Witness must be present when signed', HALF_WIDTH, WidthType.DXA, '[sig|req|witness0]', '[text|req|witness0]')
         ]
       })];
@@ -271,7 +277,7 @@ function counterpartyExecution(answers) {
       recital = `Executed by ${name} in the manner authorised by the laws of its place of incorporation`;
       rows = [new TableRow({
         children: [
-          sigCell('Signature of authorised signatory', 'Name of authorised signatory (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]'),
+          sigCell('Signature of authorised signatory', 'Name of authorised signatory (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]', signerName),
           sigCell('Title / Capacity', '', null, HALF_WIDTH, WidthType.DXA, '[text|req|signer0]')
         ]
       })];
@@ -281,7 +287,7 @@ function counterpartyExecution(answers) {
       recital = `Executed by ${fullName} in accordance with section 127(1) of the Corporations Act 2001 (Cth)`;
       rows = [new TableRow({
         children: [
-          sigCell('Signature of director', 'Name of director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]'),
+          sigCell('Signature of director', 'Name of director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]', signerName),
           sigCell('Signature of director/company secretary', 'Name of director/company secretary (print)', '(Please delete as applicable)', HALF_WIDTH, WidthType.DXA, '[sig|req|signer0]', '[text|req|signer0]')
         ]
       })];
@@ -739,7 +745,7 @@ function buildServiceAgreement(answers) {
       borders: tableBorders,
       rows: [new TableRow({
         children: [
-          sigCell('Signature of director', 'Name of director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer1]', '[text|req|signer1]'),
+          sigCell('Signature of director', 'Name of director (print)', null, HALF_WIDTH, WidthType.DXA, '[sig|req|signer1]', '[text|req|signer1]', 'Phillip Ransom'),
           sigCell('Signature of director/company secretary', 'Name of director/company secretary (print)', '(Please delete as applicable)', HALF_WIDTH, WidthType.DXA)
         ]
       })]

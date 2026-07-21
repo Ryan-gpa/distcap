@@ -220,6 +220,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             COUNTERPARTY_EMAIL: {
               type: "string",
               description: "What is the client's email address for notices?"
+            },
+            COUNTERPARTY_SIGNER_NAME: {
+              type: "string",
+              description: "Full name of the person at the counterparty who will sign. Printed on their signature block. Optional — leave blank if unknown."
             }
           }
         },
