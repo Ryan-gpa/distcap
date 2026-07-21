@@ -461,6 +461,15 @@ async function run() {
       res.status(401).json({ jsonrpc: '2.0', error: { code: -32001, message: 'Unauthorized' }, id: null });
     });
 
+    // Disable proxy/front-end buffering so the SSE stream flushes immediately.
+    // Without this, Azure App Service buffers the long-lived GET /mcp stream and
+    // clients (e.g. Claude) hang waiting for it to establish.
+    app.use('/mcp', (req, res, next) => {
+      res.setHeader('X-Accel-Buffering', 'no');
+      res.setHeader('Cache-Control', 'no-cache, no-transform');
+      next();
+    });
+
     const transports = {};
 
     app.post('/mcp', async (req, res) => {
@@ -472,6 +481,7 @@ async function run() {
         } else if (!sid && isInitializeRequest(req.body)) {
           transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(),
+            enableJsonResponse: true, // return plain JSON, not SSE — avoids Azure buffering
             onsessioninitialized: (id) => { transports[id] = transport; },
           });
           transport.onclose = () => { if (transport.sessionId) delete transports[transport.sessionId]; };
@@ -492,7 +502,8 @@ async function run() {
       if (!sid || !transports[sid]) { res.status(400).send('Invalid or missing session ID'); return; }
       await transports[sid].handleRequest(req, res);
     };
-    app.get('/mcp', sessionReq);
+    // No server-initiated stream — decline the long-lived SSE GET (Azure buffers it).
+    app.get('/mcp', (_req, res) => res.status(405).set('Allow', 'POST, DELETE').send('Method Not Allowed'));
     app.delete('/mcp', sessionReq);
     app.get('/health', (_req, res) => res.json({ ok: true, server: 'distcap-nda-mcp' }));
 
