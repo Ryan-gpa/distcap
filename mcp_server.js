@@ -78,7 +78,8 @@ function convertToPdf(docxPath, pdfPath) {
   }
 }
 
-const server = new Server(
+function createMcpServer() {
+  const server = new Server(
   { name: "distcap-nda-mcp", version: "1.0.0" },
   { capabilities: { tools: {}, prompts: {} } }
 );
@@ -434,10 +435,73 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
+  return server;
+}
+
 async function run() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("DistCap NDA MCP Server running on stdio");
+  const httpPort = process.env.MCP_HTTP_PORT || process.env.PORT;
+
+  if (httpPort) {
+    // Remote mode: serve the MCP over Streamable HTTP so it can be added as a
+    // connector by URL (https://<host>/mcp). Session-based: each MCP session gets
+    // its own server + transport (the correct pattern for real clients).
+    const { StreamableHTTPServerTransport } = require("@modelcontextprotocol/sdk/server/streamableHttp.js");
+    const { isInitializeRequest } = require("@modelcontextprotocol/sdk/types.js");
+    const express = require('express');
+    const { randomUUID } = require('crypto');
+
+    const app = express();
+    app.use(express.json({ limit: '10mb' }));
+
+    // Optional shared-secret gate: if MCP_AUTH_TOKEN is set, require it as a Bearer token.
+    app.use('/mcp', (req, res, next) => {
+      const required = process.env.MCP_AUTH_TOKEN;
+      if (!required) return next();
+      if ((req.headers['authorization'] || '') === `Bearer ${required}`) return next();
+      res.status(401).json({ jsonrpc: '2.0', error: { code: -32001, message: 'Unauthorized' }, id: null });
+    });
+
+    const transports = {};
+
+    app.post('/mcp', async (req, res) => {
+      try {
+        const sid = req.headers['mcp-session-id'];
+        let transport;
+        if (sid && transports[sid]) {
+          transport = transports[sid];
+        } else if (!sid && isInitializeRequest(req.body)) {
+          transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: () => randomUUID(),
+            onsessioninitialized: (id) => { transports[id] = transport; },
+          });
+          transport.onclose = () => { if (transport.sessionId) delete transports[transport.sessionId]; };
+          await createMcpServer().connect(transport);
+        } else {
+          res.status(400).json({ jsonrpc: '2.0', error: { code: -32000, message: 'Bad Request: no valid session ID' }, id: null });
+          return;
+        }
+        await transport.handleRequest(req, res, req.body);
+      } catch (e) {
+        console.error('MCP request error:', e);
+        if (!res.headersSent) res.status(500).end();
+      }
+    });
+
+    const sessionReq = async (req, res) => {
+      const sid = req.headers['mcp-session-id'];
+      if (!sid || !transports[sid]) { res.status(400).send('Invalid or missing session ID'); return; }
+      await transports[sid].handleRequest(req, res);
+    };
+    app.get('/mcp', sessionReq);
+    app.delete('/mcp', sessionReq);
+    app.get('/health', (_req, res) => res.json({ ok: true, server: 'distcap-nda-mcp' }));
+
+    app.listen(httpPort, () => console.error(`DistCap NDA MCP (HTTP) listening on :${httpPort}/mcp`));
+  } else {
+    const transport = new StdioServerTransport();
+    await createMcpServer().connect(transport);
+    console.error("DistCap NDA MCP Server running on stdio");
+  }
 }
 
 run().catch((error) => {
