@@ -7,6 +7,7 @@ const {
   GetPromptRequestSchema
 } = require("@modelcontextprotocol/sdk/types.js");
 const { buildNDADocument } = require('./build_nda.js');
+const { buildDocument: buildProposalDocument } = require('./build2.js');
 const { sendEnvelope, getEnvelopeStatus, listEnvelopes, sendReminder } = require('./docusign_sender.js');
 const { Packer } = require('docx');
 const fs = require('fs');
@@ -102,6 +103,10 @@ server.setRequestHandler(ListPromptsRequestSchema, async () => {
       {
         name: "draft-service-agreement",
         description: "Start a guided flow to draft a Distillery Capital Service Agreement (engaging a consultant)",
+      },
+      {
+        name: "draft-proposal",
+        description: "Start a guided flow to draft a Distillery Capital client proposal",
       }
     ]
   };
@@ -180,6 +185,20 @@ Explain that testing should be done in the demo environment first (DS_ENV=demo),
           content: {
             type: "text",
             text: "Draft a Distillery Capital Service Agreement by calling the distcap_generate_service_agreement tool. Distillery Capital is the CLIENT engaging a consultant and signs as Phillip Ransom automatically — do not ask about the Distillery Capital side, and do not write the agreement text yourself (the template handles all clauses and the Schedule 1). First, present me this exact checklist as a clear itemized list and ask me to fill it in (I can answer all at once):\n\nREQUIRED — Consultancy party:\n1. Full legal entity name\n2. ABN (11 digits)\n3. Registered address\n4. Notice email\n\nOPTIONAL — left as a placeholder in the document if omitted:\n5. Name of the person signing for the Consultancy\n6. Engagement commencement date\n7. Project / engagement name\n8. Description of the services\n9. Property address(es)\n10. Fee structure — any of: fixed fee, monthly retainer, success fee, abortive fee\n11. Insurance required (e.g. Professional Indemnity, Public Liability)\n12. Project start date\n13. Estimated end date\n14. Any other intended users / additional details\n\nAfter I reply, call distcap_generate_service_agreement with whatever I provided and leave the rest as placeholders."
+          }
+        }
+      ]
+    };
+  }
+  if (request.params.name === "draft-proposal") {
+    return {
+      description: "Guided proposal generation",
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: "Draft a Distillery Capital client proposal by calling the distcap_generate_proposal tool. Distillery Capital is the advisor and Phillip Ransom leads; do not write the proposal text yourself — the template handles the cover, letter, sections, T&Cs and formatting. Present me this checklist grouped as below and ask me to fill it in (answer what you can; anything omitted stays a highlighted placeholder, and the team chart in Section 4 and the CV pages in Appendix 1 are manual paste-ins). Then call the tool.\n\nA. Client & contact:\n1. Client legal entity name (required)\n2. Short name (e.g. 'NI')\n3. Primary contact — name, first name, title, email\n\nB. Engagement:\n4. Project / transaction name (required)\n5. One-line transaction description\n6. Engagement type (default: Transaction Advisory)\n7. Advisor role (default: real estate)\n8. Draft or final (default: draft)\n\nC. Origin meeting (Section 1):\n9. Who was met, where, and when (DistCap lead defaults to Phillip Ransom)\n10. One sentence: what the client asked DistCap to do\n\nD. Scope (Section 2):\n11. 4–8 specific deliverables\n12. Any extra client obligations\n\nE. Timeframes & team (Sections 3–4):\n13. Availability window; days/week initially, for how long, stepping down to\n14. Supporting team members (or Phil only)\n15. Initial term (default: one month)\n\nF. Commercial (Section 5):\n16. Fee basis — time & materials or fixed\n17. If T&M: hourly rates (default $550 / $350 / $100 ex GST) + indicative monthly estimate\n18. If fixed: amount + payment milestones\n19. Invoicing basis (default: monthly in arrears, 14-day terms)\n\nAfter I reply, call distcap_generate_proposal with what I provided."
           }
         }
       ]
@@ -274,6 +293,51 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             SCHEDULE_START_DATE: { type: "string", description: "Schedule 1: project start date." },
             SCHEDULE_END_DATE: { type: "string", description: "Schedule 1: estimated project end date or milestone." },
             SCHEDULE_ADDITIONAL: { type: "string", description: "Schedule 1: any additional details, or N/A." }
+          }
+        },
+      },
+      {
+        name: "distcap_generate_proposal",
+        description: "Generates a Distillery Capital client proposal (.docx) from the intake fields. Distillery Capital is the advisor. The template handles cover, letter, sections, T&Cs and formatting; any field omitted is left as a highlighted placeholder. NOTE: the team-chart (Section 4) and CV pages (Appendix 1) are marked slots to paste in manually — the tool does not fill those. Not sent via DocuSign (proposals are issued as documents).",
+        inputSchema: {
+          type: "object",
+          required: ["CLIENT_LEGAL_ENTITY", "PROJECT_NAME"],
+          properties: {
+            CLIENT_LEGAL_ENTITY: { type: "string", description: "Client's full legal entity name." },
+            CLIENT_NAME: { type: "string", description: "Client display name." },
+            CLIENT_SHORT_NAME: { type: "string", description: "Client short/defined-term name (e.g. 'NI')." },
+            CONTACT_NAME: { type: "string", description: "Primary contact full name." },
+            CONTACT_FIRST_NAME: { type: "string", description: "Primary contact first name (for salutation)." },
+            CONTACT_TITLE: { type: "string", description: "Primary contact title." },
+            CONTACT_EMAIL: { type: "string", description: "Primary contact email." },
+            DECISION_MAKER: { type: "string", description: "Role the advice is directed to (default: the contact's role)." },
+            PROJECT_NAME: { type: "string", description: "Project / transaction name (cover title)." },
+            PROJECT_DESCRIPTION: { type: "string", description: "One-line transaction description." },
+            ENGAGEMENT_TYPE: { type: "string", description: "Engagement type for the Re: line (default: Transaction Advisory)." },
+            SERVICE_DESCRIPTOR: { type: "string", description: "Service descriptor for the cover subtitle (default: transaction advisory)." },
+            ADVISOR_ROLE: { type: "string", description: "DistCap acting as the client's ___ advisor (default: real estate)." },
+            draft_status: { type: "string", description: "Draft or final issue (default: draft).", enum: ["draft", "final"] },
+            MEETING_CONTACT: { type: "string", description: "Section 1: who from the client was met." },
+            MEETING_LEAD: { type: "string", description: "Section 1: who led for DistCap (default: Phillip Ransom)." },
+            MEETING_LOCATION: { type: "string", description: "Section 1: meeting location." },
+            MEETING_DATE: { type: "string", description: "Section 1: meeting date." },
+            REQUIREMENT_SUMMARY: { type: "string", description: "One sentence: what the client asked DistCap to do." },
+            DELIVERABLES: { type: "array", items: { type: "string" }, description: "Section 2: 4–8 specific deliverables/activities." },
+            CLIENT_OBLIGATION_OTHER: { type: "string", description: "Any client obligations beyond the standard two." },
+            AVAILABILITY_WINDOW: { type: "string", description: "Availability window from start (default: two to three months)." },
+            DAYS_PER_WEEK_INITIAL: { type: "string", description: "Days per week initially." },
+            COMMITMENT_PERIOD: { type: "string", description: "For what period at the initial commitment." },
+            DAYS_PER_WEEK_STEPDOWN: { type: "string", description: "Days per week stepping down to." },
+            TEAM_MEMBERS: { type: "string", description: "Supporting team members (names + roles), or Phil only." },
+            INITIAL_TERM: { type: "string", description: "Initial engagement term (default: one (1) month)." },
+            fee_basis: { type: "string", description: "Fee basis.", enum: ["time_and_materials", "fixed"] },
+            RATE_MD: { type: "string", description: "T&M: MD hourly rate ex GST (default 550)." },
+            RATE_ADVISOR: { type: "string", description: "T&M: advisor hourly rate ex GST (default 350)." },
+            RATE_ANALYST: { type: "string", description: "T&M: analyst hourly rate ex GST (default 100)." },
+            FEE_MONTHLY_ESTIMATE: { type: "string", description: "T&M: indicative monthly estimate, if quoting one." },
+            FIXED_FEE_AMOUNT: { type: "string", description: "Fixed: fee amount." },
+            FIXED_FEE_MILESTONES: { type: "string", description: "Fixed: payment milestones." },
+            INVOICING_BASIS: { type: "string", description: "Invoicing basis (default: monthly in arrears, 14-day terms)." }
           }
         },
       },
@@ -439,6 +503,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: `Service Agreement generated.\nSaved to: ${outPath}\n\n${locationNote}\n\n[NEXT STEP]: To send for signature, use distcap_send_for_signature with this docx_path — pass the CONSULTANCY signer as the counterparty signer (they sign first); Phillip Ransom counter-signs for Distillery Capital automatically.` }] };
       } catch (err) {
         return { content: [{ type: "text", text: `Error generating service agreement: ${err.message}` }], isError: true };
+      }
+    }
+
+    case "distcap_generate_proposal": {
+      const payload = request.params.arguments || {};
+      try {
+        if (!payload.DATE_ISSUE) payload.DATE_ISSUE = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        if (!payload.YEAR) payload.YEAR = String(new Date().getFullYear());
+        const doc = buildProposalDocument(payload, { isTemplate: false });
+        const buf = await Packer.toBuffer(doc);
+        const client = (payload.CLIENT_SHORT_NAME || payload.CLIENT_LEGAL_ENTITY || 'Client').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 30);
+        const proj = (payload.PROJECT_NAME || 'Proposal').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 30);
+        const outputDir = getOutputDir();
+        const outPath = path.join(outputDir, `DistCap_Proposal_${client}_${proj}_${Date.now()}.docx`);
+        fs.writeFileSync(outPath, buf);
+        const locationNote = isOutputDirConfigured()
+          ? `Saved to your configured output folder.`
+          : `Saved to the default output folder (Documents\\Distillery Capital).`;
+        return { content: [{ type: "text", text: `Proposal generated.\nSaved to: ${outPath}\n\n${locationNote}\n\nAny fields you didn't provide remain yellow-highlighted placeholders. The team chart (Section 4) and CV pages (Appendix 1) are marked slots to paste in manually. Review before issuing.` }] };
+      } catch (err) {
+        return { content: [{ type: "text", text: `Error generating proposal: ${err.message}` }], isError: true };
       }
     }
 
