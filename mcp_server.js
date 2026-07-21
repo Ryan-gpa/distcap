@@ -7,7 +7,7 @@ const {
   GetPromptRequestSchema
 } = require("@modelcontextprotocol/sdk/types.js");
 const { buildNDADocument } = require('./build_nda.js');
-const { sendEnvelope, getEnvelopeStatus } = require('./docusign_sender.js');
+const { sendEnvelope, getEnvelopeStatus, listEnvelopes, sendReminder } = require('./docusign_sender.js');
 const { Packer } = require('docx');
 const fs = require('fs');
 const path = require('path');
@@ -498,6 +498,56 @@ async function run() {
     app.get('/mcp', (_req, res) => res.status(405).set('Allow', 'POST, DELETE').send('Method Not Allowed'));
     app.delete('/mcp', sessionReq);
     app.get('/health', (_req, res) => res.json({ ok: true, server: 'distcap-nda-mcp' }));
+
+    // ── Live signature dashboard for Phil ──────────────────────────────────
+    // GET /dashboard shows every envelope's status + a Remind button for
+    // outstanding ones. Optional DASHBOARD_KEY env gates it via ?key=... .
+    app.use(express.urlencoded({ extended: false }));
+    const dashKeyOk = (req) => !process.env.DASHBOARD_KEY || (req.query.key || '') === process.env.DASHBOARD_KEY;
+    const keyQ = () => (process.env.DASHBOARD_KEY ? `?key=${encodeURIComponent(process.env.DASHBOARD_KEY)}` : '');
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    app.get('/dashboard', async (req, res) => {
+      if (!dashKeyOk(req)) return res.status(401).send('Unauthorized');
+      try {
+        const envs = await listEnvelopes(60);
+        const outstanding = envs.filter(e => e.outstanding);
+        const done = envs.filter(e => !e.outstanding);
+        const rowHtml = (e) => {
+          const pend = e.pending.map(p => `${esc(p.name)} &lt;${esc(p.email)}&gt; — ${esc(p.status)}`).join('<br>') || '—';
+          const badge = e.status === 'completed' ? 'ok' : (e.outstanding ? (e.daysOut >= 3 ? 'late' : 'wait') : 'other');
+          const remind = e.outstanding
+            ? `<form method="POST" action="/dashboard/remind${keyQ()}" style="margin:0"><input type="hidden" name="envelopeId" value="${esc(e.envelopeId)}"><button class="btn">Remind</button></form>`
+            : '';
+          return `<tr><td>${esc(e.subject)}</td><td><span class="b ${badge}">${esc(e.status)}</span></td><td>${esc((e.sent || '').slice(0, 10))}</td><td style="text-align:center">${e.outstanding ? e.daysOut : ''}</td><td>${pend}</td><td>${remind}</td></tr>`;
+        };
+        const table = (rows) => rows.length ? `<table><thead><tr><th>Document</th><th>Status</th><th>Sent</th><th>Days</th><th>Waiting on</th><th></th></tr></thead><tbody>${rows.map(rowHtml).join('')}</tbody></table>` : '<p class="muted">None.</p>';
+        res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DistCap — Signature Dashboard</title><style>
+          body{font:15px/1.4 -apple-system,Segoe UI,Arial,sans-serif;margin:0;background:#f4f6f8;color:#1a1a1a}
+          header{background:#00538A;color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+          header h1{font-size:18px;margin:0} .accent{height:4px;background:#FFF307}
+          main{max-width:1000px;margin:24px auto;padding:0 16px} h2{font-size:15px;color:#00538A;margin:24px 0 8px}
+          table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+          th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #eee;vertical-align:top}
+          th{background:#f0f3f6;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#556}
+          .b{padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600}
+          .b.ok{background:#e3f5e9;color:#1a7f45}.b.wait{background:#fff6e0;color:#8a6d00}.b.late{background:#fde3e3;color:#b02020}.b.other{background:#eee;color:#555}
+          .btn{background:#00538A;color:#fff;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px}.btn:hover{background:#00406b}
+          .muted{color:#889}.foot{color:#889;font-size:12px;margin-top:24px}
+        </style></head><body>
+        <header><h1>Distillery Capital — Signature Dashboard</h1><a href="/dashboard${keyQ()}" style="color:#fff;font-size:13px">&#8635; Refresh</a></header><div class="accent"></div>
+        <main><h2>Outstanding — ${outstanding.length}</h2>${table(outstanding)}<h2>Completed / closed — ${done.length}</h2>${table(done)}
+        <p class="foot">Live from DocuSign (${esc(process.env.DS_ENV || 'demo')}). "Days" = days since sent; red &#8805; 3 days. Remind resends the signing email to whoever's still pending.</p></main></body></html>`);
+      } catch (e) {
+        res.status(500).send(`<p style="font:15px sans-serif;color:#b02020">Dashboard error: ${esc(e.message)}</p>`);
+      }
+    });
+
+    app.post('/dashboard/remind', async (req, res) => {
+      if (!dashKeyOk(req)) return res.status(401).send('Unauthorized');
+      try { await sendReminder(req.body.envelopeId); } catch (_e) { /* fall through to reload */ }
+      res.redirect(`/dashboard${keyQ()}`);
+    });
 
     app.listen(httpPort, () => console.error(`DistCap NDA MCP (HTTP) listening on :${httpPort}/mcp`));
   } else {

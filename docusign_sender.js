@@ -190,4 +190,58 @@ async function getEnvelopeStatus(envelopeId) {
   };
 }
 
-module.exports = { sendEnvelope, getEnvelopeStatus, buildAssertion, cfg, missingConfig };
+// List recent envelopes with per-signer status. Enriches non-final envelopes with
+// who is still pending and how many days it has been outstanding.
+async function listEnvelopes(fromDays = 30) {
+  const c = cfg();
+  const miss = missingConfig(c);
+  if (miss.length) { const e = new Error(`DocuSign is not configured. Missing: ${miss.join(', ')}.`); e.code = 'DS_NOT_CONFIGURED'; throw e; }
+  const token = await getAccessToken(c);
+  const baseUri = await getBaseUri(c, token);
+  const from = new Date(Date.now() - fromDays * 86400000).toISOString();
+  const res = await fetch(`${baseUri}/restapi/v2.1/accounts/${c.accountId}/envelopes?from_date=${encodeURIComponent(from)}&order=desc`, { headers: { Authorization: `Bearer ${token}` } });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`DocuSign list failed (${res.status}): ${JSON.stringify(data)}`);
+  const now = Date.now();
+  const out = [];
+  for (const e of (data.envelopes || [])) {
+    const item = {
+      envelopeId: e.envelopeId,
+      subject: e.emailSubject,
+      status: e.status,
+      sent: e.sentDateTime || e.createdDateTime,
+      completed: e.completedDateTime || null,
+      outstanding: !['completed', 'voided', 'declined'].includes(e.status),
+      daysOut: e.sentDateTime ? Math.floor((now - new Date(e.sentDateTime).getTime()) / 86400000) : 0,
+      pending: [],
+    };
+    if (item.outstanding) {
+      try {
+        const rr = await fetch(`${baseUri}/restapi/v2.1/accounts/${c.accountId}/envelopes/${e.envelopeId}/recipients`, { headers: { Authorization: `Bearer ${token}` } });
+        const rd = await rr.json();
+        item.pending = (rd.signers || []).filter(s => s.status !== 'completed').map(s => ({ name: s.name, email: s.email, status: s.status }));
+      } catch { /* leave pending empty on error */ }
+    }
+    out.push(item);
+  }
+  return out;
+}
+
+// Resend the signing request to the currently-pending recipient(s) of an envelope.
+async function sendReminder(envelopeId) {
+  const c = cfg();
+  const miss = missingConfig(c);
+  if (miss.length) { const e = new Error(`DocuSign is not configured. Missing: ${miss.join(', ')}.`); e.code = 'DS_NOT_CONFIGURED'; throw e; }
+  const token = await getAccessToken(c);
+  const baseUri = await getBaseUri(c, token);
+  const res = await fetch(`${baseUri}/restapi/v2.1/accounts/${c.accountId}/envelopes/${envelopeId}?resend_envelope=true`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`DocuSign reminder failed (${res.status}): ${JSON.stringify(data)}`);
+  return { envelopeId, reminded: true };
+}
+
+module.exports = { sendEnvelope, getEnvelopeStatus, listEnvelopes, sendReminder, buildAssertion, cfg, missingConfig };
