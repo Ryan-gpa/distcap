@@ -231,7 +231,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "distcap_send_for_signature",
-        description: "Sends an already-generated Distillery Capital document to DocuSign for signature. Takes the docx_path returned by distcap_generate_nda, plus the two signers. Creates a DRAFT envelope by default (set send_now=true to send immediately). Signature and printed-name fields are placed automatically. The counterparty signs first, then Distillery Capital.",
+        description: "Sends an already-generated Distillery Capital document to DocuSign for signature. Takes the docx_path returned by distcap_generate_nda plus the COUNTERPARTY signer's name and email. Distillery Capital always signs as Phillip Ransom automatically — do NOT ask the user for the Distillery Capital signer. Creates a DRAFT envelope by default (set send_now=true to send immediately). Signature/name fields are placed automatically. The counterparty signs first, then Phillip Ransom counter-signs.",
         inputSchema: {
           type: "object",
           required: ["docx_path", "COUNTERPARTY_SIGNER_NAME", "COUNTERPARTY_SIGNER_EMAIL"],
@@ -247,14 +247,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             COUNTERPARTY_SIGNER_EMAIL: {
               type: "string",
               description: "Email of the counterparty signer."
-            },
-            DISTCAP_SIGNER_NAME: {
-              type: "string",
-              description: "Name of the Distillery Capital signer. Defaults to 'Phillip Ransom'."
-            },
-            DISTCAP_SIGNER_EMAIL: {
-              type: "string",
-              description: "Email of the Distillery Capital signer. Defaults to 'phil.ransom@distcap.com.au'."
             },
             send_now: {
               type: "boolean",
