@@ -663,6 +663,11 @@ async function run() {
           });
           transport.onclose = () => { if (transport.sessionId) delete transports[transport.sessionId]; };
           await createMcpServer().connect(transport);
+        } else if (sid) {
+          // Session unknown/expired (e.g. the server restarted and cleared in-memory
+          // sessions). Per the MCP spec, respond 404 so the client re-initializes.
+          res.status(404).json({ jsonrpc: '2.0', error: { code: -32001, message: 'Session not found; reinitialize' }, id: null });
+          return;
         } else {
           res.status(400).json({ jsonrpc: '2.0', error: { code: -32000, message: 'Bad Request: no valid session ID' }, id: null });
           return;
@@ -676,7 +681,8 @@ async function run() {
 
     const sessionReq = async (req, res) => {
       const sid = req.headers['mcp-session-id'];
-      if (!sid || !transports[sid]) { res.status(400).send('Invalid or missing session ID'); return; }
+      if (!sid) { res.status(400).send('Missing session ID'); return; }
+      if (!transports[sid]) { res.status(404).send('Session not found; reinitialize'); return; }
       await transports[sid].handleRequest(req, res);
     };
     // No server-initiated stream — decline the long-lived SSE GET (Azure buffers it).
