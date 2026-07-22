@@ -42,6 +42,28 @@ function downloadLinkFor(filename) {
   return `${base.replace(/\/$/, '')}/download/${encodeURIComponent(filename)}${key}`;
 }
 
+// Generate a proposal cover image via Gemini (returns a PNG Buffer, or null if no
+// GEMINI_API_KEY / on any failure — the builder then uses the placeholder).
+// Claude crafts the prompt; Gemini renders the pixels.
+async function generateCoverImage(promptText) {
+  if (!process.env.GEMINI_API_KEY) return null;
+  try {
+    const fetch = require('node-fetch');
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }], generationConfig: { responseModalities: ['IMAGE', 'TEXT'] } }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+    const img = parts.find(p => p.inlineData && p.inlineData.data);
+    return img ? Buffer.from(img.inlineData.data, 'base64') : null;
+  } catch (_e) {
+    return null;
+  }
+}
+
 // Validate ABN using ATO mod-89 checksum
 function validateABN(abn) {
   if (!abn) return { valid: false, error: 'ABN is missing.' };
@@ -365,7 +387,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             FEE_MONTHLY_ESTIMATE: { type: "string", description: "T&M: indicative monthly estimate, if quoting one." },
             FIXED_FEE_AMOUNT: { type: "string", description: "Fixed: fee amount." },
             FIXED_FEE_MILESTONES: { type: "string", description: "Fixed: payment milestones." },
-            INVOICING_BASIS: { type: "string", description: "Invoicing basis (default: monthly in arrears, 14-day terms)." }
+            INVOICING_BASIS: { type: "string", description: "Invoicing basis (default: monthly in arrears, 14-day terms)." },
+            cover_image_prompt: { type: "string", description: "Optional. A tailored prompt for the AI-generated cover image (you craft it from the project — e.g. the asset type, location, style). If omitted, one is derived from the project. Keep it professional: architectural/landscape, neutral tones, no people/text/logos." },
+            generate_cover: { type: "boolean", description: "Whether to auto-generate the cover image (default true when a Gemini key is configured). Set false to use the plain placeholder." }
           }
         },
       },
@@ -535,7 +559,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
         if (!payload.DATE_ISSUE) payload.DATE_ISSUE = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         if (!payload.YEAR) payload.YEAR = String(new Date().getFullYear());
-        const doc = buildProposalDocument(payload, { isTemplate: false });
+
+        // Cover image: generate via Gemini unless disabled. Claude may supply a
+        // tailored cover_image_prompt; otherwise derive one from the project.
+        let customCoverBuffer = null;
+        if (process.env.GEMINI_API_KEY && payload.generate_cover !== false) {
+          const coverPrompt = (payload.cover_image_prompt && payload.cover_image_prompt.trim())
+            || `Professional aerial architectural photograph for an Australian real estate advisory proposal cover page. ${payload.PROJECT_DESCRIPTION || payload.PROJECT_NAME || 'Modern Australian commercial property or urban development precinct'}. Clean, neutral, sophisticated tones; no people; no text; no logos; landscape orientation; photorealistic; high quality.`;
+          customCoverBuffer = await generateCoverImage(coverPrompt);
+        }
+
+        const doc = buildProposalDocument(payload, { isTemplate: false, customCoverBuffer });
         const buf = await Packer.toBuffer(doc);
         const client = (payload.CLIENT_SHORT_NAME || payload.CLIENT_LEGAL_ENTITY || 'Client').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 30);
         const proj = (payload.PROJECT_NAME || 'Proposal').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 30);
@@ -544,7 +578,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         fs.writeFileSync(outPath, buf);
         const dl = downloadLinkFor(path.basename(outPath));
         const dlLine = dl ? `\n\nDownload the .docx: ${dl}` : '';
-        return { content: [{ type: "text", text: `Proposal generated.\nSaved to: ${outPath}${dlLine}\n\nAny fields you didn't provide remain yellow-highlighted placeholders. Review before issuing.` }] };
+        const coverNote = customCoverBuffer
+          ? `\nCover: AI-generated image.`
+          : (process.env.GEMINI_API_KEY ? `\nCover: image generation failed — placeholder used.` : `\nCover: placeholder (set GEMINI_API_KEY to auto-generate).`);
+        return { content: [{ type: "text", text: `Proposal generated.\nSaved to: ${outPath}${coverNote}${dlLine}\n\nAny fields you didn't provide remain yellow-highlighted placeholders. Review before issuing.` }] };
       } catch (err) {
         return { content: [{ type: "text", text: `Error generating proposal: ${err.message}` }], isError: true };
       }
