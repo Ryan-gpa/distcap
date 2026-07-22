@@ -45,8 +45,14 @@ function downloadLinkFor(filename) {
 // Generate a proposal cover image via Gemini (returns a PNG Buffer, or null if no
 // GEMINI_API_KEY / on any failure — the builder then uses the placeholder).
 // Claude crafts the prompt; Gemini renders the pixels.
+// A real Gemini key is set (ignores empty / placeholder values like "<GEMINI_API_KEY>").
+function geminiConfigured() {
+  const k = process.env.GEMINI_API_KEY;
+  return !!(k && k.trim().length > 10 && !k.includes('<'));
+}
+
 async function generateCoverImage(promptText) {
-  if (!process.env.GEMINI_API_KEY) return null;
+  if (!geminiConfigured()) return null;
   try {
     const fetch = require('node-fetch');
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${process.env.GEMINI_API_KEY}`, {
@@ -563,7 +569,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         // Cover image: generate via Gemini unless disabled. Claude may supply a
         // tailored cover_image_prompt; otherwise derive one from the project.
         let customCoverBuffer = null;
-        if (process.env.GEMINI_API_KEY && payload.generate_cover !== false) {
+        if (geminiConfigured() && payload.generate_cover !== false) {
           const coverPrompt = (payload.cover_image_prompt && payload.cover_image_prompt.trim())
             || `Professional aerial architectural photograph for an Australian real estate advisory proposal cover page. ${payload.PROJECT_DESCRIPTION || payload.PROJECT_NAME || 'Modern Australian commercial property or urban development precinct'}. Clean, neutral, sophisticated tones; no people; no text; no logos; landscape orientation; photorealistic; high quality.`;
           customCoverBuffer = await generateCoverImage(coverPrompt);
@@ -580,7 +586,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const dlLine = dl ? `\n\nDownload the .docx: ${dl}` : '';
         const coverNote = customCoverBuffer
           ? `\nCover: AI-generated image.`
-          : (process.env.GEMINI_API_KEY ? `\nCover: image generation failed — placeholder used.` : `\nCover: placeholder (set GEMINI_API_KEY to auto-generate).`);
+          : (geminiConfigured() ? `\nCover: image generation failed — placeholder used.` : `\nCover: placeholder (set a real GEMINI_API_KEY to auto-generate).`);
         return { content: [{ type: "text", text: `Proposal generated.\nSaved to: ${outPath}${coverNote}${dlLine}\n\nAny fields you didn't provide remain yellow-highlighted placeholders. Review before issuing.` }] };
       } catch (err) {
         return { content: [{ type: "text", text: `Error generating proposal: ${err.message}` }], isError: true };
