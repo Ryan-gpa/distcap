@@ -82,7 +82,26 @@ function convertToPdf(docxPath, pdfPath) {
 function createMcpServer() {
   const server = new Server(
   { name: "distcap-nda-mcp", version: "1.0.0" },
-  { capabilities: { tools: {}, prompts: {} } }
+  {
+    capabilities: { tools: {}, prompts: {} },
+    instructions: [
+      "Distillery Capital document service — generates and e-signs Distillery Capital legal documents.",
+      "",
+      "DOCUMENTS: NDAs (standard + non-circumvention), Service Agreements (Distillery Capital engaging a consultant), and client Proposals.",
+      "",
+      "KEY RULES:",
+      "- Distillery Capital is ALWAYS the disclosing party (NDA) / Client (Service Agreement) / advisor (Proposal), and signs as Phillip Ransom automatically. Never ask the user for the Distillery Capital side.",
+      "- Only collect the OTHER party's details (counterparty / consultancy / proposal client). Prefer the guided prompts: draft-nda, draft-service-agreement, draft-proposal — they present a required/optional checklist.",
+      "- Do not write document text yourself or use another document skill; the templates handle all clauses, governing law and structure.",
+      "",
+      "TOOLS:",
+      "- distcap_generate_nda / distcap_generate_service_agreement / distcap_generate_proposal → build the .docx (returns the saved path).",
+      "- distcap_send_for_signature → send a generated doc to DocuSign. Pass the docx_path and the OTHER party's signer (name + email); the other party signs first, then Phillip Ransom counter-signs. (Proposals are issued as documents, not DocuSign-routed.)",
+      "- distcap_signature_status → check an envelope's signing status. A live dashboard is also served at /dashboard.",
+      "",
+      "DOCUSIGN: this service authenticates to DocuSign itself using its own server-side credentials (JWT). You do NOT need the separate DocuSign connector active — signing works entirely through this server's own tools.",
+    ].join("\n"),
+  }
 );
 
 server.setRequestHandler(ListPromptsRequestSchema, async () => {
