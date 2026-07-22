@@ -33,6 +33,15 @@ function isOutputDirConfigured() {
   return !!(process.env.DISTCAP_OUTPUT_DIR && process.env.DISTCAP_OUTPUT_DIR.trim());
 }
 
+// Build a download URL for a generated file, if PUBLIC_BASE_URL is configured (hosted
+// mode). Lets Claude hand the user a link to the .docx that lives on the server.
+function downloadLinkFor(filename) {
+  const base = process.env.PUBLIC_BASE_URL;
+  if (!base) return null;
+  const key = process.env.DASHBOARD_KEY ? `?key=${encodeURIComponent(process.env.DASHBOARD_KEY)}` : '';
+  return `${base.replace(/\/$/, '')}/download/${encodeURIComponent(filename)}${key}`;
+}
+
 // Validate ABN using ATO mod-89 checksum
 function validateABN(abn) {
   if (!abn) return { valid: false, error: 'ABN is missing.' };
@@ -474,12 +483,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           }
         }
 
-        const locationNote = isOutputDirConfigured()
-          ? `Saved to your configured output folder.`
-          : `Saved to the default output folder (Documents\\Distillery Capital). To change this, set DISTCAP_OUTPUT_DIR — see the "distcap-getting-started" prompt.`;
-        const m365Note = `If this folder is synced with OneDrive/SharePoint, the document is now available in Microsoft 365.`;
-
-        let responseText = `Successfully generated document!\nFormat: ${finalFormat}\nSaved to: ${finalPath}\n\n${locationNote}\n${m365Note}`;
+        const dl = downloadLinkFor(path.basename(finalPath));
+        let responseText = `Successfully generated document!\nFormat: ${finalFormat}\nSaved to: ${finalPath}`;
+        if (dl) responseText += `\n\nDownload the file: ${dl}`;
 
         if (payload.SEND_MODE === 'send_to_sign') {
           responseText += `\n\n[NEXT STEP]: To send this document for signature, ask to send it via DocuSign.`;
@@ -516,10 +522,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const outputDir = getOutputDir();
         const outPath = path.join(outputDir, `DistCap_ServiceAgreement_${party}_${Date.now()}.docx`);
         fs.writeFileSync(outPath, buf);
-        const locationNote = isOutputDirConfigured()
-          ? `Saved to your configured output folder.`
-          : `Saved to the default output folder (Documents\\Distillery Capital).`;
-        return { content: [{ type: "text", text: `Service Agreement generated.\nSaved to: ${outPath}\n\n${locationNote}\n\n[NEXT STEP]: To send for signature, use distcap_send_for_signature with this docx_path — pass the CONSULTANCY signer as the counterparty signer (they sign first); Phillip Ransom counter-signs for Distillery Capital automatically.` }] };
+        const dl = downloadLinkFor(path.basename(outPath));
+        const dlLine = dl ? `\n\nDownload the .docx: ${dl}` : '';
+        return { content: [{ type: "text", text: `Service Agreement generated.\nSaved to: ${outPath}${dlLine}\n\n[NEXT STEP]: To send for signature, use distcap_send_for_signature with this docx_path — pass the CONSULTANCY signer as the counterparty signer (they sign first); Phillip Ransom counter-signs for Distillery Capital automatically.` }] };
       } catch (err) {
         return { content: [{ type: "text", text: `Error generating service agreement: ${err.message}` }], isError: true };
       }
@@ -537,10 +542,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const outputDir = getOutputDir();
         const outPath = path.join(outputDir, `DistCap_Proposal_${client}_${proj}_${Date.now()}.docx`);
         fs.writeFileSync(outPath, buf);
-        const locationNote = isOutputDirConfigured()
-          ? `Saved to your configured output folder.`
-          : `Saved to the default output folder (Documents\\Distillery Capital).`;
-        return { content: [{ type: "text", text: `Proposal generated.\nSaved to: ${outPath}\n\n${locationNote}\n\nAny fields you didn't provide remain yellow-highlighted placeholders. The team chart (Section 4) and CV pages (Appendix 1) are marked slots to paste in manually. Review before issuing.` }] };
+        const dl = downloadLinkFor(path.basename(outPath));
+        const dlLine = dl ? `\n\nDownload the .docx: ${dl}` : '';
+        return { content: [{ type: "text", text: `Proposal generated.\nSaved to: ${outPath}${dlLine}\n\nAny fields you didn't provide remain yellow-highlighted placeholders. Review before issuing.` }] };
       } catch (err) {
         return { content: [{ type: "text", text: `Error generating proposal: ${err.message}` }], isError: true };
       }
@@ -728,6 +732,15 @@ async function run() {
       if (!dashKeyOk(req)) return res.status(401).send('Unauthorized');
       try { await sendReminder(req.body.envelopeId); } catch (_e) { /* fall through to reload */ }
       res.redirect(`/dashboard${keyQ()}`);
+    });
+
+    // Download a generated document that lives on the server (hosted mode).
+    app.get('/download/:file', (req, res) => {
+      if (!dashKeyOk(req)) return res.status(401).send('Unauthorized');
+      const name = path.basename(req.params.file || ''); // strip any path traversal
+      const full = path.join(getOutputDir(), name);
+      if (!name || !fs.existsSync(full)) return res.status(404).send('File not found');
+      res.download(full, name);
     });
 
     app.listen(httpPort, () => console.error(`DistCap NDA MCP (HTTP) listening on :${httpPort}/mcp`));
