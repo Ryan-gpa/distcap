@@ -326,7 +326,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "distcap_generate_proposal",
-        description: "Generates a Distillery Capital client proposal (.docx) from the intake fields. Distillery Capital is the advisor. The template handles cover, letter, sections, T&Cs and formatting; any field omitted is left as a highlighted placeholder. NOTE: the team-chart (Section 4) and CV pages (Appendix 1) are marked slots to paste in manually — the tool does not fill those. Not sent via DocuSign (proposals are issued as documents).",
+        description: "Generates a Distillery Capital client proposal (.docx) from the intake fields. Distillery Capital is the advisor. The template handles the cover, letter, sections, T&Cs and formatting, and AUTOMATICALLY embeds the standard team chart (Section 4) and Phillip Ransom's CV with photo (Appendix 1) — these are already in the document, not manual paste-ins. Any field the user omits is left as a highlighted placeholder. Proposals are issued as documents (not sent via DocuSign).",
         inputSchema: {
           type: "object",
           required: ["CLIENT_LEGAL_ENTITY", "PROJECT_NAME"],
