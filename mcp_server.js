@@ -565,6 +565,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
         if (!payload.DATE_ISSUE) payload.DATE_ISSUE = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         if (!payload.YEAR) payload.YEAR = String(new Date().getFullYear());
+        // Apply DistCap's standard proposal defaults (per the intake spec) so common
+        // fields don't sit as placeholders. Anything the user provides overrides these.
+        const propDefaults = {
+          ENGAGEMENT_TYPE: 'Transaction Advisory',
+          SERVICE_DESCRIPTOR: 'transaction advisory',
+          ADVISOR_ROLE: 'real estate',
+          MEETING_LEAD: 'Phillip Ransom',
+          AVAILABILITY_WINDOW: 'two to three months',
+          INITIAL_TERM: 'one (1) month',
+          INVOICING_BASIS: 'monthly in arrears, with payment due within 14 days',
+        };
+        for (const [k, v] of Object.entries(propDefaults)) { if (!payload[k]) payload[k] = v; }
+        if (!payload.DECISION_MAKER) {
+          payload.DECISION_MAKER = payload.CONTACT_TITLE ? `the ${payload.CONTACT_TITLE}` : (payload.CONTACT_NAME || undefined);
+        }
 
         // Cover image: generate via Gemini unless disabled. Claude may supply a
         // tailored cover_image_prompt; otherwise derive one from the project.
