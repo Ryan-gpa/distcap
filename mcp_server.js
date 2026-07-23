@@ -9,6 +9,7 @@ const {
 const { buildNDADocument } = require('./build_nda.js');
 const { buildDocument: buildProposalDocument } = require('./build2.js');
 const { sendEnvelope, getEnvelopeStatus, listEnvelopes, sendReminder } = require('./docusign_sender.js');
+const { oauthEnabled, mountOAuth } = require('./oauth.js');
 const { Packer } = require('docx');
 const fs = require('fs');
 const path = require('path');
@@ -692,6 +693,17 @@ async function run() {
 
     const app = express();
     app.use(express.json({ limit: '10mb' }));
+
+    // OAuth (opt-in): mount the auth server and require a valid Bearer token on /mcp.
+    // Enabled only when OAUTH_ENABLED=true + secrets set — otherwise the server is
+    // unchanged, so switching it on can't silently break a working connector.
+    if (oauthEnabled()) {
+      const oauthProvider = mountOAuth(app);
+      const { requireBearerAuth } = require('@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js');
+      const resourceMetadataUrl = process.env.PUBLIC_BASE_URL.replace(/\/$/, '') + '/.well-known/oauth-protected-resource';
+      app.use('/mcp', requireBearerAuth({ verifier: oauthProvider, resourceMetadataUrl }));
+      console.error('OAuth enabled — /mcp requires a Bearer token.');
+    }
 
     // Optional shared-secret gate: if MCP_AUTH_TOKEN is set, require it as a Bearer token.
     app.use('/mcp', (req, res, next) => {
