@@ -318,6 +318,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             COUNTERPARTY_SIGNER_NAME: {
               type: "string",
               description: "Full name of the person at the counterparty who will sign. Printed on their signature block. Optional — leave blank if unknown."
+            },
+            client_fill: {
+              type: "boolean",
+              description: "If true, produce a BLANK NDA for the counterparty to complete themselves: adds a 'to be completed by the counterparty' instruction banner and leaves their fields as highlighted yellow placeholders. Use when the user wants to forward the NDA for the client to fill in and return, rather than filling it here."
             }
           }
         },
@@ -516,6 +520,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const dl = downloadLinkFor(path.basename(finalPath));
         let responseText = `Successfully generated document!\nFormat: ${finalFormat}\nSaved to: ${finalPath}`;
         if (dl) responseText += `\n\nDownload the file: ${dl}`;
+        if (payload.client_fill) responseText += `\n\nThis is a BLANK NDA for the counterparty to complete — the fields they must fill (legal name, ABN, address, short name, notice email) are highlighted in yellow, with a banner instructing them to complete and return it to Distillery Capital. Forward this file to the client.`;
 
         if (payload.SEND_MODE === 'send_to_sign') {
           responseText += `\n\n[NEXT STEP]: To send this document for signature, ask to send it via DocuSign.`;

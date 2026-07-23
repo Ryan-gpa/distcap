@@ -45,6 +45,20 @@ const v = (answers, key, placeholder, opts = {}) => {
   return r(placeholder, { bold: true, highlight: 'yellow', ...opts });
 };
 
+// Instruction banner for the "blank NDA sent to the counterparty to complete" workflow.
+function clientFillBanner() {
+  const edge = { style: BorderStyle.SINGLE, size: 8, color: NAVY, space: 6 };
+  return new Paragraph({
+    spacing: { before: 0, after: 240 },
+    border: { top: edge, bottom: edge, left: edge, right: edge },
+    shading: { type: ShadingType.CLEAR, fill: 'FFF9CC' },
+    children: [
+      rb('TO BE COMPLETED BY THE COUNTERPARTY:  ', { color: NAVY }),
+      r('Please complete the fields highlighted in yellow below — your full legal entity name, ABN, registered address, short name and notice email — then save this document and return it to Distillery Capital at phil.ransom@distcap.com.au.')
+    ]
+  });
+}
+
 // Document title: centred, navy, 18pt bold
 const title = (text) => new Paragraph({
   alignment: AlignmentType.CENTER,
@@ -357,7 +371,10 @@ function ndaParties(answers) {
     blank(60),
     bp([
       v(answers, 'COUNTERPARTY_LEGAL_ENTITY', '[COUNTERPARTY LEGAL ENTITY NAME]'),
-      r(answers && answers.COUNTERPARTY_ABN ? ' ABN ' + getFormattedABN(answers.COUNTERPARTY_ABN) : ' ABN [XX XXX XXX XXX]'),
+      r(' ABN '),
+      (answers && answers.COUNTERPARTY_ABN)
+        ? r(getFormattedABN(answers.COUNTERPARTY_ABN))
+        : r('[XX XXX XXX XXX]', { bold: true, highlight: 'yellow' }),
       r(' of '),
       v(answers, 'COUNTERPARTY_ADDRESS', '[COUNTERPARTY ADDRESS]'),
       r(' '),
@@ -831,6 +848,7 @@ function buildNDAStandard(answers) {
   const year = (answers && answers.YEAR) ? answers.YEAR : new Date().getFullYear().toString();
   const content = filterEmpty([
     title('NON-DISCLOSURE AGREEMENT'),
+    (answers && answers.client_fill) ? clientFillBanner() : null,
     ...ndaParties(answers),
     ...ndaBackground(),
     ...ndaInterpretation(answers),
@@ -864,6 +882,7 @@ function buildNDACircumvention(answers) {
   const year = (answers && answers.YEAR) ? answers.YEAR : new Date().getFullYear().toString();
   const content = filterEmpty([
     title('NON-DISCLOSURE AGREEMENT'),
+    (answers && answers.client_fill) ? clientFillBanner() : null,
     ...ndaParties(answers),
     ...ndaBackground(),
     ...ndaInterpretation(answers),
